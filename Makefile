@@ -1,0 +1,61 @@
+PKGNAME  = mcsmanager
+DESTDIR ?=
+
+GOBIN       = _build/bin
+GOPROJROOT  = $(GOSRC)/$(PROJREPO)
+
+GOLDFLAGS   = -ldflags "-s -w"
+GOCC        = go
+GOFMT       = $(GOCC) fmt -x
+GOGET       = $(GOCC) get $(GOLDFLAGS)
+GOBUILD     = $(GOCC) build -v $(GOLDFLAGS)
+GOTEST      = $(GOCC) test
+GOVET       = $(GOCC) vet
+GOINSTALL   = $(GOCC) install $(GOLDFLAGS)
+GOBUILDDEP  = GOPATH=`pwd`/_build $(GOINSTALL)
+GOCLEANDEP  = GOPATH=`pwd`/_build $(GOCC) clean -cache -modcache
+GOLINT      = $(GOBIN)/golint -set_exit_status
+
+include Makefile.waterlog
+
+all: build
+
+build: setup-deps
+	@$(call stage,BUILD)
+	@$(GOBUILD)
+	@$(call pass,BUILD)
+
+test: build
+	@$(call stage,TEST)
+	@$(GOTEST) ./...
+	@$(call pass,TEST)
+
+validate: setup-deps
+	@$(call stage,FORMAT)
+	@$(GOFMT) ./...
+	@$(call pass,FORMAT)
+	@$(call stage,VET)
+	@$(call task,Running 'go vet'...)
+	@$(GOVET) ./...
+	@$(call pass,VET)
+	@$(call stage,LINT)
+	@$(call task,Running 'golint'...)
+	@$(GOLINT) `go list ./... | grep -v vendor`
+	@$(call pass,LINT)
+
+setup-deps:
+	@$(call stage,DEPS)
+	@if [ -d build/src/honnef.co ]; then rm -rf build/src/honnef.co; fi
+	@if [ ! -e $(GOBIN)/golint ]; then \
+		$(call task,Installing golint...); \
+		$(GOBUILDDEP) github.com/golang/lint/golint; \
+		$(GOCLEANDEP) ./...; \
+	fi
+
+clean:
+	@$(call stage,CLEAN)
+	@$(call task,Removing _build directory...)
+	@rm -rf _build
+	@$(call task,Removing executable...)
+	@rm $(PKGNAME)
+	@$(call pass,CLEAN)
