@@ -77,8 +77,8 @@ var configString = `
 server_file_name = "minecraft_server.jar"
 
 [java_settings]
-starting_memory = 2
-maximum_memory = 2
+starting_memory = "2G"
+maximum_memory = "2G"
 java_flags = []
 
 [server_settings]
