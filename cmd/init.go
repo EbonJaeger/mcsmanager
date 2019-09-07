@@ -119,7 +119,7 @@ maximum_memory = 2
 java_flags = []
 
 [server_settings]
-jar_flats = [
+jar_flags = [
     "nogui"
 ]
 `
