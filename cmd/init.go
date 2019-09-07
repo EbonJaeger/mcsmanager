@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"bufio"
-	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/EbonJaeger/mcsmanager/config"
+	"github.com/EbonJaeger/mcsmanager/util"
 )
 
 // Init sets up everything required to start a Minecraft server
@@ -21,11 +21,17 @@ var Init = cmd.CMD{
 }
 
 // InitArgs contains the command arguments for the init command
-type InitArgs struct{}
+type InitArgs struct {
+	URL string `desc:"Location of a server jar to download"`
+}
 
 // InitServer sets up the Minecraft server directory
 func InitServer(root *cmd.RootCMD, c *cmd.CMD) {
-	log.Infoln("Setting up Minecraft server")
+	args := c.Args.(*InitArgs)
+	cwd, err := os.Getwd()
+	if err != nil {
+		return
+	}
 
 	// Check if our dependencies are installed
 	log.Infoln("Checking for installed dependencies...")
@@ -41,63 +47,15 @@ func InitServer(root *cmd.RootCMD, c *cmd.CMD) {
 
 	log.Goodln("All dependencies are installed!")
 
-	// Create config file
-	log.Infoln("Generating config file...")
-	err := createConfigFile()
+	// Download the specified server jar
+	log.Infoln("Downloading server jar...")
+	fileName := config.Conf.MainSettings.ServerFile
+	outFile := filepath.Join(cwd, fileName)
+	err = util.DownloadFile(outFile, args.URL)
 	if err != nil {
-		log.Fatalln("Unable to generate config:", err)
+		log.Fatalln("Error downloading file:", err)
 	}
-	log.Goodln("Configuration file generated")
-
-	// Create server directory if it does not exist
-	log.Infoln("Creating server files directory...")
-	createServerDir()
-}
-
-func createConfigFile() error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	configPath := filepath.Join(cwd, "config.toml")
-
-	_, err = os.Stat(configPath)
-	if !os.IsNotExist(err) { // Config file already exists
-		return errors.New("Config file already exists")
-	}
-
-	file, err := os.Create(configPath)
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-
-	writer := bufio.NewWriter(file)
-	writer.WriteString(configString)
-	err = writer.Flush()
-	return err
-}
-
-func createServerDir() {
-	cwd, err := os.Getwd()
-	if err != nil {
-		log.Fatalln("Error trying to set up server:", err.Error())
-	}
-
-	serverPath := filepath.Join(cwd, "serverfiles")
-	_, err = os.Stat(serverPath)
-	if os.IsNotExist(err) { // Check if the server directory exists. If not, attempt to create it
-		err2 := os.MkdirAll(serverPath, 0755)
-		if err2 != nil { // Error creating server directory
-			log.Fatalln("Unable to create server directory:", err2.Error())
-		}
-
-		log.Goodln("Server directory created")
-	} else { // A server directory already exists
-		log.Fatalln("Directory already exists! Aborting.")
-	}
+	log.Goodln("Server jar downloaded!")
 }
 
 func isCommandAvailable(name string) bool {
@@ -108,18 +66,3 @@ func isCommandAvailable(name string) bool {
 
 	return true
 }
-
-var configString = `
-[main_settings]
-server_file_name = "paperclip.jar"
-
-[java_settings]
-starting_memory = 2
-maximum_memory = 2
-java_flags = []
-
-[server_settings]
-jar_flags = [
-    "nogui"
-]
-`
