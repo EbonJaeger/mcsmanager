@@ -1,5 +1,7 @@
 PKGNAME  = mcsmanager
 DESTDIR ?=
+PREFIX  ?= /usr
+BINDIR   = $(PREFIX)/bin
 
 GOBIN       = _build/bin
 GOPROJROOT  = $(GOSRC)/$(PROJREPO)
@@ -51,6 +53,16 @@ setup-deps:
 		$(GOBUILDDEP) github.com/golang/lint/golint; \
 		$(GOCLEANDEP) ./...; \
 	fi
+
+install:
+	@$(call stage,INSTALL)
+	install -D -m 00755 $(PKGNAME) $(DESTDIR)$(BINDIR)/$(PKGNAME)
+	@$(call pass,INSTALL)
+
+uninstall:
+	@$(call stage,UNINSTALL)
+	rm -f $(DESTDIR)$(BINDIR)/$(PKGNAME)
+	@$(call pass,UNINSTALL)
 
 clean:
 	@$(call stage,CLEAN)
