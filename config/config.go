@@ -20,8 +20,8 @@ type mainSettings struct {
 }
 
 type javaSettings struct {
-	StartingMemory int32    `toml:"starting_memory"`
-	MaxMemory      int32    `toml:"maximum_memory"`
+	StartingMemory string   `toml:"starting_memory"`
+	MaxMemory      string   `toml:"maximum_memory"`
 	Flags          []string `toml:"java_flags"`
 }
 

@@ -12,6 +12,7 @@ import (
 
 var log *waterlog.WaterLog
 
+// GlobalFlags holds the flags for all commands.
 type GlobalFlags struct{}
 
 // Root is the main command for the application
@@ -27,6 +28,8 @@ func init() {
 	// Initialize subcommands
 	Root.RegisterCMD(&Init)
 	Root.RegisterCMD(&Start)
+	Root.RegisterCMD(&Stop)
+	Root.RegisterCMD(&Attach)
 
 	// Initialize logging
 	log = waterlog.New(os.Stdout, "", log2.Ltime)
