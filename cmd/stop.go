@@ -64,7 +64,7 @@ func pollSessions(done chan bool) {
 					return
 				}
 
-				log.Print(".")
+				log.Printf("\rWaiting up to 10 seconds: %d", tickCount)
 			}
 		}
 	}
