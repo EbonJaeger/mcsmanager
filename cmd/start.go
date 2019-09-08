@@ -28,17 +28,17 @@ type StartArgs struct{}
 func StartServer(root *cmd.RootCMD, c *cmd.CMD) {
 	log.Infoln("Starting Minecraft server...")
 
+	// Check for already running server
+	if tmux.IsSessionRunning() {
+		log.Warnln("A server session is already running!")
+		return
+	}
+
 	// Check if the Minecraft EULA has been accepted
 	if !isEulaAccepted() {
 		log.Warnln("The Minecraft EULA has not been accepted!")
 		log.Warnln("The server will not start until the EULA has been accepted.")
 		log.Warnln("Open 'eula.txt' in a text editor, and change the line 'eula=false' to 'eula=true'.")
-		return
-	}
-
-	// Check for already running server
-	if tmux.IsSessionRunning() {
-		log.Warnln("A server session is already running!")
 		return
 	}
 
@@ -85,7 +85,11 @@ func isEulaAccepted() bool {
 	eulaPath := filepath.Join(cwd, "eula.txt")
 	_, err = os.Stat(eulaPath)
 	if os.IsNotExist(err) { // EULA file doesn't exist yet
-		return false
+		// Let the server run to generate the eula.txt file
+		log.Warnln("EULA file doesn't exist yet! Starting server to generate it.")
+		log.Warnln("The server will not start until the EULA has been accepted.")
+		log.Warnln("Open 'eula.txt' in a text editor, and change the line 'eula=false' to 'eula=true'.")
+		return true
 	}
 
 	// Open the file
