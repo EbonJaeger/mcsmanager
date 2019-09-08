@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/DataDrake/cli-ng/cmd"
@@ -24,6 +27,14 @@ type StartArgs struct{}
 // StartServer starts a Minecraft server.
 func StartServer(root *cmd.RootCMD, c *cmd.CMD) {
 	log.Infoln("Starting Minecraft server...")
+
+	// Check if the Minecraft EULA has been accepted
+	if !isEulaAccepted() {
+		log.Warnln("The Minecraft EULA has not been accepted!")
+		log.Warnln("The server will not start until the EULA has been accepted.")
+		log.Warnln("Open 'eula.txt' in a text editor, and change the line 'eula=false' to 'eula=true'.")
+		return
+	}
 
 	// Check for already running server
 	sessions, _ := tmux.ListSessions()
@@ -63,4 +74,40 @@ func buildJavaCmd() string {
 	}
 
 	return javaCmd
+}
+
+func isEulaAccepted() bool {
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("Error trying to read EULA:", err)
+	}
+
+	// Check if the file exists
+	eulaPath := filepath.Join(cwd, "eula.txt")
+	_, err = os.Stat(eulaPath)
+	if os.IsNotExist(err) { // EULA file doesn't exist yet
+		return false
+	}
+
+	// Open the file
+	file, err := os.Open(eulaPath)
+	if err != nil {
+		log.Fatalln("Unable to open EULA file:", err)
+	}
+	defer file.Close()
+
+	// Read the file
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() { // For each line
+		line := scanner.Text()
+		if strings.HasPrefix(line, "eula") { // Line starts with eula
+			value := strings.Split(line, "=")[1]
+			if strings.ToLower(value) == "true" {
+				return true
+			}
+			return false
+		}
+	}
+
+	return false
 }
