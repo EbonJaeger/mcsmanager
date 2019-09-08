@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/EbonJaeger/mcsmanager/tmux"
 )
@@ -19,6 +21,13 @@ type StopArgs struct{}
 
 // StopServer stops the Minecraft server
 func StopServer(root *cmd.RootCMD, c *cmd.CMD) {
+	// Check if the server is already stopped
+	sessions, _ := tmux.ListSessions()
+	if !strings.Contains(sessions, tmux.SessionName) {
+		log.Warnln("The Minecraft server is already stopped!")
+		return
+	}
+
 	log.Infoln("Attempting to stop the server...")
 
 	// Stop the server gracefully
