@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"strings"
+	"time"
 
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/EbonJaeger/mcsmanager/tmux"
@@ -22,8 +22,7 @@ type StopArgs struct{}
 // StopServer stops the Minecraft server
 func StopServer(root *cmd.RootCMD, c *cmd.CMD) {
 	// Check if the server is already stopped
-	sessions, _ := tmux.ListSessions()
-	if !strings.Contains(sessions, tmux.SessionName) {
+	if r, _ := tmux.IsSessionRunning(); r == false {
 		log.Warnln("The Minecraft server is already stopped!")
 		return
 	}
@@ -31,16 +30,42 @@ func StopServer(root *cmd.RootCMD, c *cmd.CMD) {
 	log.Infoln("Attempting to stop the server...")
 
 	// Stop the server gracefully
-	stopCmd := tmux.Exec("stop")
-	// TODO: out doesn't work as expected
-	_, err := stopCmd.Output()
-	if err != nil {
-		log.Errorln("Could not stop the server normally! Attempting to force close...", err)
-		/*killCmd := tmux.KillSession()
-		killCmd.Run()
-		log.Warnln("Server session force-killed!")*/
+	err := tmux.Exec("stop")
+
+	// Wait 10 seconds for server to stop
+	done := make(chan bool)
+	go pollSessions(done)
+	stopped := <-done
+
+	if !stopped || err != nil {
+		log.Errorln("Could not stop the server normally! Attempting to force close...")
+		tmux.KillSession()
+		log.Warnln("Server session force-killed!")
 		return
 	}
 
 	log.Goodln("Server stopped successfully!")
+}
+
+func pollSessions(done chan bool) {
+	ticker := time.NewTicker(1 * time.Second)
+	tickCount := 0
+	for {
+		select {
+		case <-ticker.C: // Tick received
+			tickCount++
+			if r, _ := tmux.IsSessionRunning(); r == false { // Session no longer running
+				done <- true
+			} else { // Session still running
+				if tickCount == 10 { // Stop polling after 10 seconds
+					done <- false
+					ticker.Stop()
+					log.Println("")
+					return
+				}
+
+				log.Print(".")
+			}
+		}
+	}
 }

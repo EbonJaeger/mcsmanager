@@ -37,8 +37,7 @@ func StartServer(root *cmd.RootCMD, c *cmd.CMD) {
 	}
 
 	// Check for already running server
-	sessions, _ := tmux.ListSessions()
-	if strings.Contains(sessions, tmux.SessionName) {
+	if r, _ := tmux.IsSessionRunning(); r == true {
 		log.Warnln("A server session is already running!")
 		return
 	}

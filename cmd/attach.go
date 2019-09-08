@@ -3,7 +3,6 @@ package cmd
 import (
 	"bufio"
 	"os"
-	"strings"
 
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/EbonJaeger/mcsmanager/tmux"
@@ -24,8 +23,7 @@ type AttachArgs struct{}
 // AttachToSession attaches to the server console if the server is running.
 func AttachToSession(root *cmd.RootCMD, c *cmd.CMD) {
 	// Check for already running server
-	sessions, _ := tmux.ListSessions()
-	if !strings.Contains(sessions, tmux.SessionName) {
+	if r, _ := tmux.IsSessionRunning(); r == false {
 		log.Warnln("Server is not currently running!")
 		return
 	}

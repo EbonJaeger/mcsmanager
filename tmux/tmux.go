@@ -44,8 +44,21 @@ func CreateSession(command string) ([]byte, error) {
 }
 
 // Exec creates a command to send keys to the tmux session.
-func Exec(command string) *exec.Cmd {
-	return exec.Command("tmux", "send-keys", "-t", getWindowName(), strings.Replace(command, "\"", "\\\"", -1), "C-m")
+func Exec(command string) error {
+	cmd := exec.Command("tmux", "send-keys", "-t", getWindowName(), strings.Replace(command, "\"", "\\\"", -1), "C-m")
+
+	return cmd.Run()
+}
+
+// IsSessionRunning checks if our Minecraft tmux session is running.
+func IsSessionRunning() (bool, error) {
+	sessions, err := ListSessions()
+
+	if strings.Contains(sessions, SessionName) {
+		return true, err
+	}
+
+	return false, err
 }
 
 // ListSessions gets the list of active tmux sessions.
@@ -57,8 +70,10 @@ func ListSessions() (string, error) {
 }
 
 // KillSession creates a command to kill the tmux session.
-func KillSession() *exec.Cmd {
-	return exec.Command("tmux", "kill-session", "-t", SessionName)
+func KillSession() error {
+	cmd := exec.Command("tmux", "kill-session", "-t", SessionName)
+
+	return cmd.Run()
 }
 
 func getWindowName() string {
