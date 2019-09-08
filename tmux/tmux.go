@@ -51,14 +51,17 @@ func Exec(command string) error {
 }
 
 // IsSessionRunning checks if our Minecraft tmux session is running.
-func IsSessionRunning() (bool, error) {
+func IsSessionRunning() bool {
 	sessions, err := ListSessions()
-
-	if strings.Contains(sessions, SessionName) {
-		return true, err
+	if err != nil {
+		return false
 	}
 
-	return false, err
+	if strings.Contains(sessions, SessionName) {
+		return true
+	}
+
+	return false
 }
 
 // ListSessions gets the list of active tmux sessions.

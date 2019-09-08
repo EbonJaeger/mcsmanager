@@ -37,7 +37,7 @@ func StartServer(root *cmd.RootCMD, c *cmd.CMD) {
 	}
 
 	// Check for already running server
-	if r, _ := tmux.IsSessionRunning(); r == true {
+	if tmux.IsSessionRunning() {
 		log.Warnln("A server session is already running!")
 		return
 	}
@@ -78,7 +78,7 @@ func buildJavaCmd() string {
 func isEulaAccepted() bool {
 	cwd, err := os.Getwd()
 	if err != nil {
-		log.Fatalf("Error trying to read EULA:", err)
+		log.Fatalln("Error trying to read EULA:", err)
 	}
 
 	// Check if the file exists

@@ -23,7 +23,7 @@ type AttachArgs struct{}
 // AttachToSession attaches to the server console if the server is running.
 func AttachToSession(root *cmd.RootCMD, c *cmd.CMD) {
 	// Check for already running server
-	if r, _ := tmux.IsSessionRunning(); r == false {
+	if !tmux.IsSessionRunning() {
 		log.Warnln("Server is not currently running!")
 		return
 	}

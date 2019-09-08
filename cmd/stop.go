@@ -22,7 +22,7 @@ type StopArgs struct{}
 // StopServer stops the Minecraft server
 func StopServer(root *cmd.RootCMD, c *cmd.CMD) {
 	// Check if the server is already stopped
-	if r, _ := tmux.IsSessionRunning(); r == false {
+	if !tmux.IsSessionRunning() {
 		log.Warnln("The Minecraft server is already stopped!")
 		return
 	}
@@ -54,7 +54,7 @@ func pollSessions(done chan bool) {
 		select {
 		case <-ticker.C: // Tick received
 			tickCount++
-			if r, _ := tmux.IsSessionRunning(); r == false { // Session no longer running
+			if !tmux.IsSessionRunning() { // Session no longer running
 				done <- true
 			} else { // Session still running
 				if tickCount == 10 { // Stop polling after 10 seconds
