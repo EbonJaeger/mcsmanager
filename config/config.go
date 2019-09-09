@@ -13,6 +13,7 @@ type config struct {
 	MainSettings   mainSettings   `toml:"main_settings"`
 	JavaSettings   javaSettings   `toml:"java_settings"`
 	ServerSettings serverSettings `toml:"server_settings"`
+	BackupSettings backupSettings `toml:"backup_settings"`
 }
 
 type mainSettings struct {
@@ -27,6 +28,11 @@ type javaSettings struct {
 
 type serverSettings struct {
 	Flags []string `toml:"jar_flags"`
+}
+
+type backupSettings struct {
+	MaxBackups int `toml:"max_number_backups"`
+	MaxAge     int `toml:"days_to_keep"`
 }
 
 // Conf holds all of the configuration settings
@@ -85,4 +91,8 @@ java_flags = []
 jar_flags = [
     "nogui"
 ]
+
+[backup_settings]
+max_number_backups = 10
+days_to_keep = 7
 `
