@@ -7,5 +7,4 @@ require (
 	github.com/DataDrake/cli-ng v1.0.1
 	github.com/DataDrake/waterlog v1.0.5
 	github.com/dustin/go-humanize v1.0.0
-	gopkg.in/djherbis/times.v1 v1.2.0
 )

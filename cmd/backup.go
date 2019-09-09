@@ -12,7 +12,6 @@ import (
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/EbonJaeger/mcsmanager/config"
 	"github.com/EbonJaeger/mcsmanager/tmux"
-	"gopkg.in/djherbis/times.v1"
 )
 
 // Backup archives the Minecraft server files.
@@ -126,13 +125,8 @@ func checkOldBackups(path string) (int, error) {
 
 	prunedCount := 0
 	for _, fi := range files {
-		t, err := times.Stat(filepath.Join(path, fi.Name()))
-		if err != nil {
-			return 0, err
-		}
-
 		cur := time.Now()
-		difference := cur.Sub(t.ModTime())
+		difference := cur.Sub(fi.ModTime())
 		if difference.Hours() > float64(maxAge) { // Archive is older than max age, delete it
 			err = os.Remove(filepath.Join(path, fi.Name()))
 			if err != nil {
