@@ -44,6 +44,7 @@ func StopServer(root *cmd.RootCMD, c *cmd.CMD) {
 		return
 	}
 
+	log.Println("")
 	log.Goodln("Server stopped successfully!")
 }
 
