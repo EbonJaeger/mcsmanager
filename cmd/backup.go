@@ -140,6 +140,10 @@ func checkOldBackups(path string) (int, error) {
 }
 
 func checkNumBackups(path string) (int, error) {
+	if config.Conf.BackupSettings.MaxBackups == -1 { // -1 to disable pruning
+		return 0, nil
+	}
+
 	dir, err := os.Open(path)
 	defer dir.Close()
 	if err != nil {
