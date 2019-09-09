@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/DataDrake/cli-ng/cmd"
@@ -60,6 +61,15 @@ func ArchiveServer(root *cmd.RootCMD, c *cmd.CMD) {
 	}
 	if pruned > 0 {
 		log.Infof("Removed %d archive(s) due to age.\n", pruned)
+	}
+
+	// Check for too many backups
+	pruned, err = checkNumBackups(backupDir)
+	if err != nil {
+		log.Fatalf("Unable to remove old backups: %s\n", err.Error())
+	}
+	if pruned > 0 {
+		log.Infof("Removed %d archive(s) because over backup limit.\n", pruned)
 	}
 
 	// Create archive file
@@ -133,6 +143,44 @@ func checkOldBackups(path string) (int, error) {
 	}
 
 	return prunedCount, nil
+}
+
+func checkNumBackups(path string) (int, error) {
+	dir, err := os.Open(path)
+	defer dir.Close()
+	if err != nil {
+		return 0, err
+	}
+
+	files, err := dir.Readdir(-1)
+	if err != nil {
+		return 0, err
+	}
+
+	numArchives := len(files)
+	maxArchives := config.Conf.BackupSettings.MaxBackups
+	pruned := 0
+	if numArchives > maxArchives {
+		// Find oldest backups to remove
+		toRemove := make([]os.FileInfo, 0)
+		sort.Slice(files, func(i, j int) bool {
+			return files[i].ModTime().Before(files[j].ModTime())
+		})
+		numToRemove := numArchives - maxArchives + 1 // We should be at the limit after the current backup
+		for i := 0; i < numToRemove; i++ {
+			toRemove = append(toRemove, files[i])
+		}
+
+		for _, fi := range toRemove {
+			err = os.Remove(filepath.Join(path, fi.Name()))
+			if err != nil {
+				return pruned, err
+			}
+			pruned++
+		}
+	}
+
+	return pruned, nil
 }
 
 func archiveDir(dir *os.File, w *tar.Writer) {
