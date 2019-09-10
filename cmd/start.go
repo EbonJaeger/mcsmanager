@@ -10,6 +10,7 @@ import (
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/EbonJaeger/mcsmanager/config"
 	"github.com/EbonJaeger/mcsmanager/tmux"
+	"github.com/EbonJaeger/mcsmanager/util"
 )
 
 // Start attempts to start a Minecraft server.
@@ -42,12 +43,31 @@ func StartServer(root *cmd.RootCMD, c *cmd.CMD) {
 		return
 	}
 
+	// Remove old logs
+	logsDir := "logs"
+	pruned, err := util.RemoveOldFiles(logsDir, config.Conf.MainSettings.MaxAge, "latest.log")
+	if err != nil {
+		log.Fatalf("Unable to remove old backups: %s\n", err.Error())
+	}
+	if pruned > 0 {
+		log.Infof("Removed %d log(s) due to age.\n", pruned)
+	}
+
+	// Remove too many logs
+	pruned, err = util.RemoveTooManyFiles(logsDir, config.Conf.MainSettings.MaxLogs, "latest.log")
+	if err != nil {
+		log.Fatalf("Unable to remove old backups: %s\n", err.Error())
+	}
+	if pruned > 0 {
+		log.Infof("Removed %d log(s) because over log limit.\n", pruned)
+	}
+
 	// Build the Java command to start the server
 	javaCmd := buildJavaCmd()
 
 	// Create tmux session stuff
 	// TODO: out doesn't work as expected
-	_, err := tmux.CreateSession(javaCmd)
+	_, err = tmux.CreateSession(javaCmd)
 	if err != nil {
 		log.Fatalln("Error creating tmux session!", err)
 	}

@@ -18,6 +18,8 @@ type config struct {
 
 type mainSettings struct {
 	ServerFile string `toml:"server_file_name"`
+	MaxLogs    int    `toml:"max_log_count"`
+	MaxAge     int    `toml:"max_log_age"`
 }
 
 type javaSettings struct {
@@ -81,6 +83,8 @@ func createConfigFile(cwd string) error {
 var configString = `
 [main_settings]
 server_file_name = "minecraft_server.jar"
+max_log_count = 10
+max_log_age = 7
 
 [java_settings]
 starting_memory = "2G"

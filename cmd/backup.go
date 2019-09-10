@@ -6,12 +6,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 	"time"
 
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/EbonJaeger/mcsmanager/config"
 	"github.com/EbonJaeger/mcsmanager/tmux"
+	"github.com/EbonJaeger/mcsmanager/util"
 )
 
 // Backup archives the Minecraft server files.
@@ -54,7 +54,7 @@ func ArchiveServer(root *cmd.RootCMD, c *cmd.CMD) {
 	}
 
 	// Check for backups that are too old
-	pruned, err := checkOldBackups(backupDir)
+	pruned, err := util.RemoveOldFiles(backupDir, config.Conf.BackupSettings.MaxAge)
 	if err != nil {
 		log.Fatalf("Unable to remove old backups: %s\n", err.Error())
 	}
@@ -63,7 +63,7 @@ func ArchiveServer(root *cmd.RootCMD, c *cmd.CMD) {
 	}
 
 	// Check for too many backups
-	pruned, err = checkNumBackups(backupDir)
+	pruned, err = util.RemoveTooManyFiles(backupDir, config.Conf.BackupSettings.MaxBackups)
 	if err != nil {
 		log.Fatalf("Unable to remove old backups: %s\n", err.Error())
 	}
@@ -101,84 +101,6 @@ func createArchiveFile(dir string) (*os.File, error) {
 	tarPath := filepath.Join(dir, timeStr+".tar.gz")
 
 	return os.Create(tarPath)
-}
-
-func checkOldBackups(path string) (int, error) {
-	maxAge := config.Conf.BackupSettings.MaxAge
-
-	if maxAge == -1 { // -1 to disable age pruning
-		return 0, nil
-	}
-
-	maxAge = maxAge * 24 // Max age is in days, convert it to hours
-
-	dir, err := os.Open(path)
-	defer dir.Close()
-	if err != nil {
-		return 0, err
-	}
-
-	files, err := dir.Readdir(-1)
-	if err != nil {
-		return 0, err
-	}
-
-	prunedCount := 0
-	for _, fi := range files {
-		cur := time.Now()
-		difference := cur.Sub(fi.ModTime())
-		if difference.Hours() > float64(maxAge) { // Archive is older than max age, delete it
-			err = os.Remove(filepath.Join(path, fi.Name()))
-			if err != nil {
-				return prunedCount, err
-			}
-			prunedCount++
-		}
-	}
-
-	return prunedCount, nil
-}
-
-func checkNumBackups(path string) (int, error) {
-	if config.Conf.BackupSettings.MaxBackups == -1 { // -1 to disable pruning
-		return 0, nil
-	}
-
-	dir, err := os.Open(path)
-	defer dir.Close()
-	if err != nil {
-		return 0, err
-	}
-
-	files, err := dir.Readdir(-1)
-	if err != nil {
-		return 0, err
-	}
-
-	numArchives := len(files)
-	maxArchives := config.Conf.BackupSettings.MaxBackups
-	pruned := 0
-	if numArchives > maxArchives {
-		// Find oldest backups to remove
-		toRemove := make([]os.FileInfo, 0)
-		sort.Slice(files, func(i, j int) bool {
-			return files[i].ModTime().Before(files[j].ModTime())
-		})
-		numToRemove := numArchives - maxArchives + 1 // We should be at the limit after the current backup
-		for i := 0; i < numToRemove; i++ {
-			toRemove = append(toRemove, files[i])
-		}
-
-		for _, fi := range toRemove {
-			err = os.Remove(filepath.Join(path, fi.Name()))
-			if err != nil {
-				return pruned, err
-			}
-			pruned++
-		}
-	}
-
-	return pruned, nil
 }
 
 func archiveDir(dir *os.File, w *tar.Writer) {
