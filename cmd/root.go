@@ -31,6 +31,7 @@ func init() {
 	Root.RegisterCMD(&Stop)
 	Root.RegisterCMD(&Attach)
 	Root.RegisterCMD(&Backup)
+	Root.RegisterCMD(&Update)
 
 	// Initialize logging
 	log = waterlog.New(os.Stdout, "", log2.Ltime)

@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/dustin/go-humanize"
+	"github.com/stretchr/stew/slice"
 )
 
 // WriteCounter counts the number of bytes written to it. It implements to the io.Writer
@@ -17,10 +19,70 @@ type WriteCounter struct {
 	Total uint64
 }
 
+// PaperVersions is the representation of all Paper versions returned by the API.
+type PaperVersions struct {
+	Versions []string `json:"versions"`
+}
+
+// PaperBuilds is the representation of the Paper API response for a version.
+type PaperBuilds struct {
+	Builds struct {
+		Latest string `json:"latest"`
+	}
+}
+
+const paperVersionsURL = "https://papermc.io/api/v1/paper"
+const paperBuildsURL = "https://papermc.io/api/v1/paper/%s"
+const paperDownloadURL = "https://papermc.io/api/v1/paper/%s/%s/download"
+
+// DownloadFromProvider downloads the latest file release of the given
+// Minecraft version for the server software being used.
+//
+// Currently only Paper is supported.
+func DownloadFromProvider(provider string, version string, filepath string) error {
+	// See if we actially have a valid version
+	resp, err := http.Get(paperVersionsURL)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	dec := json.NewDecoder(resp.Body)
+	versions := &PaperVersions{}
+	err = dec.Decode(versions)
+	if err != nil {
+		return err
+	}
+
+	if !slice.Contains(versions.Versions, version) {
+		return fmt.Errorf("server version not found: %s", version)
+	}
+
+	// Figure out the latest build
+	url := fmt.Sprintf(paperBuildsURL, version)
+	resp2, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp2.Body.Close()
+
+	dec = json.NewDecoder(resp2.Body)
+	builds := &PaperBuilds{}
+	err = dec.Decode(builds)
+	if err != nil {
+		return err
+	}
+
+	// Make the download URL and get the file
+	build := builds.Builds.Latest
+	url = fmt.Sprintf(paperDownloadURL, version, build)
+	return DownloadFile(url, filepath)
+}
+
 // DownloadFile will download a url to a local file. It's efficient because it will
 // write as it downloads and not load the whole file into memory. We pass an io.TeeReader
 // into Copy() to report progress on the download.
-func DownloadFile(filepath string, url string) error {
+func DownloadFile(url string, filepath string) error {
 
 	// Create the file, but give it a tmp file extension, this means we won't overwrite a
 	// file until it's downloaded, but we'll remove the tmp extension once downloaded.
