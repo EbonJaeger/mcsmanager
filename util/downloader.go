@@ -1,7 +1,6 @@
 package util
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,74 +8,14 @@ import (
 	"strings"
 
 	"github.com/dustin/go-humanize"
-	"github.com/stretchr/stew/slice"
 )
 
 // WriteCounter counts the number of bytes written to it. It implements to the io.Writer
 // interface and we can pass this into io.TeeReader() which will report progress on each
 // write cycle.
 type WriteCounter struct {
-	Total uint64
-}
-
-// PaperVersions is the representation of all Paper versions returned by the API.
-type PaperVersions struct {
-	Versions []string `json:"versions"`
-}
-
-// PaperBuilds is the representation of the Paper API response for a version.
-type PaperBuilds struct {
-	Builds struct {
-		Latest string `json:"latest"`
-	}
-}
-
-const paperVersionsURL = "https://papermc.io/api/v1/paper"
-const paperBuildsURL = "https://papermc.io/api/v1/paper/%s"
-const paperDownloadURL = "https://papermc.io/api/v1/paper/%s/%s/download"
-
-// DownloadFromProvider downloads the latest file release of the given
-// Minecraft version for the server software being used.
-//
-// Currently only Paper is supported.
-func DownloadFromProvider(provider string, version string, filepath string) error {
-	// See if we actially have a valid version
-	resp, err := http.Get(paperVersionsURL)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	dec := json.NewDecoder(resp.Body)
-	versions := &PaperVersions{}
-	err = dec.Decode(versions)
-	if err != nil {
-		return err
-	}
-
-	if !slice.Contains(versions.Versions, version) {
-		return fmt.Errorf("server version not found: %s", version)
-	}
-
-	// Figure out the latest build
-	url := fmt.Sprintf(paperBuildsURL, version)
-	resp2, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp2.Body.Close()
-
-	dec = json.NewDecoder(resp2.Body)
-	builds := &PaperBuilds{}
-	err = dec.Decode(builds)
-	if err != nil {
-		return err
-	}
-
-	// Make the download URL and get the file
-	build := builds.Builds.Latest
-	url = fmt.Sprintf(paperDownloadURL, version, build)
-	return DownloadFile(url, filepath)
+	Current uint64
+	Total   uint64
 }
 
 // DownloadFile will download a url to a local file. It's efficient because it will
@@ -101,6 +40,7 @@ func DownloadFile(url string, filepath string) error {
 
 	// Create our progress reporter and pass it to be used alongside our writer
 	counter := &WriteCounter{}
+	counter.Total = uint64(resp.ContentLength)
 	_, err = io.Copy(out, io.TeeReader(resp.Body, counter))
 	if err != nil {
 		return err
@@ -124,7 +64,7 @@ func DownloadFile(url string, filepath string) error {
 
 func (wc *WriteCounter) Write(p []byte) (int, error) {
 	n := len(p)
-	wc.Total += uint64(n)
+	wc.Current += uint64(n)
 	wc.PrintProgress()
 	return n, nil
 }
@@ -133,9 +73,9 @@ func (wc *WriteCounter) Write(p []byte) (int, error) {
 func (wc WriteCounter) PrintProgress() {
 	// Clear the line by using a character return to go back to the start and remove
 	// the remaining characters by filling it with spaces
-	fmt.Printf("\r%s", strings.Repeat(" ", 35))
+	fmt.Printf("\r%s", strings.Repeat(" ", 45))
 
 	// Return again and print current status of download
 	// We use the humanize package to print the bytes in a meaningful way (e.g. 10 MB)
-	fmt.Printf("\rDownloading... %s complete", humanize.Bytes(wc.Total))
+	fmt.Printf("\rDownloading... %s / %s complete", humanize.Bytes(wc.Current), humanize.Bytes(wc.Total))
 }

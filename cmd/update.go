@@ -50,7 +50,7 @@ func UpdateServer(root *cmd.RootCMD, c *cmd.CMD) {
 	// Download the specified server jar
 	fileName := config.Conf.MainSettings.ServerFile
 	outFile := filepath.Join(cwd, fileName)
-	err = util.DownloadFromProvider(args.Provider, args.Version, outFile)
+	err = util.UpdatePaper(args.Version, outFile)
 	if err != nil {
 		log.Fatalln("Error downloading file:", err)
 	}
