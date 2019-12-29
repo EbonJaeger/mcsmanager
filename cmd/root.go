@@ -27,6 +27,7 @@ func init() {
 
 	// Initialize subcommands
 	Root.RegisterCMD(&Init)
+	Root.RegisterCMD(&Exec)
 	Root.RegisterCMD(&Start)
 	Root.RegisterCMD(&Stop)
 	Root.RegisterCMD(&Attach)
