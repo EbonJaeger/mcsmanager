@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/EbonJaeger/mcsmanager/config"
 	"github.com/EbonJaeger/mcsmanager/tmux"
 )
 
@@ -22,8 +23,11 @@ type AttachArgs struct{}
 
 // AttachToSession attaches to the server console if the server is running.
 func AttachToSession(root *cmd.RootCMD, c *cmd.CMD) {
+	// Get the server name
+	name := config.Conf.MainSettings.ServerName
+
 	// Check for already running server
-	if !tmux.IsSessionRunning() {
+	if !tmux.IsServerRunning(name) {
 		log.Warnln("Server is not currently running!")
 		return
 	}
@@ -43,7 +47,7 @@ func AttachToSession(root *cmd.RootCMD, c *cmd.CMD) {
 
 	if char == 'y' || char == 'Y' {
 		log.Infoln("Opening server console...")
-		if err := tmux.Attach(); err != nil {
+		if err := tmux.Attach(name); err != nil {
 			log.Fatalln("Unable to attach to session:", err)
 		}
 

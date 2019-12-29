@@ -29,8 +29,11 @@ type StartArgs struct{}
 func StartServer(root *cmd.RootCMD, c *cmd.CMD) {
 	log.Infoln("Starting Minecraft server...")
 
+	// Get the configured server name
+	name := config.Conf.MainSettings.ServerName
+
 	// Check for already running server
-	if tmux.IsSessionRunning() {
+	if tmux.IsServerRunning(name) {
 		log.Warnln("A server session is already running!")
 		return
 	}
@@ -65,9 +68,9 @@ func StartServer(root *cmd.RootCMD, c *cmd.CMD) {
 	// Build the Java command to start the server
 	javaCmd := buildJavaCmd()
 
-	// Create tmux session stuff
+	// Create tmux window
 	// TODO: out doesn't work as expected
-	_, err = tmux.CreateSession(javaCmd)
+	_, err = tmux.CreateSession(javaCmd, name)
 	if err != nil {
 		log.Fatalln("Error creating tmux session!", err)
 	}

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/EbonJaeger/mcsmanager/config"
 	"github.com/EbonJaeger/mcsmanager/tmux"
 )
 
@@ -21,8 +22,11 @@ type ExecArgs struct {
 
 // Execute will run a command on a running Minecraft server
 func Execute(root *cmd.RootCMD, c *cmd.CMD) {
+	// Get the server name
+	name := config.Conf.MainSettings.ServerName
+
 	// Check if the server is running
-	if !tmux.IsSessionRunning() {
+	if !tmux.IsServerRunning(name) {
 		log.Warnln("The Minecraft server is not running!")
 		return
 	}
@@ -31,7 +35,7 @@ func Execute(root *cmd.RootCMD, c *cmd.CMD) {
 	args := c.Args.(*ExecArgs)
 
 	// Send the command to the server
-	err := tmux.Exec(args.Command)
+	err := tmux.Exec(args.Command, name)
 
 	// Show any errors to the user
 	if err != nil {

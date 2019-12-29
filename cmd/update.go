@@ -34,8 +34,11 @@ func UpdateServer(root *cmd.RootCMD, c *cmd.CMD) {
 		log.Fatalln("Only Paper is supported by this command at this time. :(")
 	}
 
+	// Get the server name
+	name := config.Conf.MainSettings.ServerName
+
 	// Check if the server is running
-	if tmux.IsSessionRunning() {
+	if tmux.IsServerRunning(name) {
 		log.Warnln("The server is currently running! Please close it before updating.")
 		return
 	}

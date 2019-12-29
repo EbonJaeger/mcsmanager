@@ -28,8 +28,11 @@ type BackupArgs struct{}
 
 // ArchiveServer adds all directories and files of the server into a Gzip'd tar archive.
 func ArchiveServer(root *cmd.RootCMD, c *cmd.CMD) {
+	// Get the server name
+	name := config.Conf.MainSettings.ServerName
+
 	// Check if the server is currently running
-	if tmux.IsSessionRunning() {
+	if tmux.IsServerRunning(name) {
 		log.Warnln("Please stop the server before trying to archive it!")
 		return
 	}
