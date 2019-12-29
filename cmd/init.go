@@ -27,7 +27,9 @@ type InitArgs struct {
 
 // InitServer sets up the Minecraft server directory
 func InitServer(root *cmd.RootCMD, c *cmd.CMD) {
+	// Get the command args
 	args := c.Args.(*InitArgs)
+	// Get the current directory
 	cwd, err := os.Getwd()
 	if err != nil {
 		return
@@ -39,20 +41,17 @@ func InitServer(root *cmd.RootCMD, c *cmd.CMD) {
 	if !isCommandAvailable("tmux") {
 		missingDeps = append(missingDeps, "tmux")
 	}
-
+	// Notify the user
 	if len(missingDeps) > 0 {
-		log.Fatalln("Some dependencies are missing! Please install the following, and try again:",
-			strings.Join(missingDeps, ", "))
+		log.Fatalln("Some dependencies are missing! Please install the following, and try again:", strings.Join(missingDeps, ", "))
 	}
-
 	log.Goodln("All dependencies are installed!")
 
 	// Download the specified server jar
 	log.Infoln("Downloading server jar...")
 	fileName := config.Conf.MainSettings.ServerFile
 	outFile := filepath.Join(cwd, fileName)
-	err = util.DownloadFile(outFile, args.URL)
-	if err != nil {
+	if err = util.DownloadFile(args.URL, outFile); err != nil {
 		log.Fatalln("Error downloading file:", err)
 	}
 	log.Goodln("Server jar downloaded!")
