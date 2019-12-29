@@ -1,6 +1,7 @@
 package util
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"sort"
@@ -11,62 +12,85 @@ import (
 
 // RemoveOldFiles will delete files in the given directory if they were last modified
 // after a certain period of time.
-func RemoveOldFiles(path string, maxAge int, exemptFiles ...string) (int, error) {
+func RemoveOldFiles(path string, maxAge int, exemptFiles ...string) (total int, err error) {
 	if maxAge == -1 { // -1 to disable age pruning
-		return 0, nil
+		return
 	}
 
-	maxAge = maxAge * 24 // Max age is in days, convert it to hours
+	// Max age is in days, convert it to hours
+	maxAge = maxAge * 24
 
+	// Check of the logs dir exists
+	if _, err = os.Stat(path); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			err = nil
+		}
+		return
+	}
+
+	// Open the directory
 	dir, err := os.Open(path)
-	defer dir.Close()
 	if err != nil {
-		return 0, err
+		return
 	}
+	defer dir.Close()
 
+	// Get all the files in the directory
 	files, err := dir.Readdir(-1)
 	if err != nil {
-		return 0, err
+		return
 	}
 
-	prunedCount := 0
+	// Iterate over the files
 	for _, fi := range files {
-		if exemptFiles != nil { // Check for exempt files
+		// Check for exempt files
+		if exemptFiles != nil {
 			if slice.Contains(exemptFiles, fi.Name()) {
 				continue
 			}
 		}
 
+		// Calculate time difference
 		cur := time.Now()
 		difference := cur.Sub(fi.ModTime())
-		if difference.Hours() > float64(maxAge) { // Log is older than max age, delete it
-			err = os.Remove(filepath.Join(path, fi.Name()))
-			if err != nil {
-				return prunedCount, err
+		// Remove file if needed
+		if difference.Hours() > float64(maxAge) {
+			if err = os.Remove(filepath.Join(path, fi.Name())); err != nil {
+				return
 			}
-			prunedCount++
+			total++
 		}
 	}
 
-	return prunedCount, nil
+	return
 }
 
 // RemoveTooManyFiles will remove the oldest files in a directory until
 // the number of files in the directory is one under the limit.
-func RemoveTooManyFiles(path string, maxFiles int, exemptFiles ...string) (int, error) {
+func RemoveTooManyFiles(path string, maxFiles int, exemptFiles ...string) (total int, err error) {
 	if maxFiles == -1 { // -1 to disable pruning
-		return 0, nil
+		return
 	}
 
+	// Check of the logs dir exists
+	if _, err = os.Stat(path); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			err = nil
+		}
+		return
+	}
+
+	// Open the directory
 	dir, err := os.Open(path)
-	defer dir.Close()
 	if err != nil {
-		return 0, err
+		return
 	}
+	defer dir.Close()
 
+	// Get the files in the directory
 	files, err := dir.Readdir(-1)
 	if err != nil {
-		return 0, err
+		return
 	}
 
 	// Check for exempt files
@@ -79,8 +103,8 @@ func RemoveTooManyFiles(path string, maxFiles int, exemptFiles ...string) (int, 
 		}
 	}
 
+	// Check if there are too many files
 	numFiles := len(files)
-	pruned := 0
 	if numFiles >= maxFiles {
 		// Sort files so oldest is first
 		sort.Slice(files, func(i, j int) bool {
@@ -94,14 +118,14 @@ func RemoveTooManyFiles(path string, maxFiles int, exemptFiles ...string) (int, 
 			toRemove = append(toRemove, files[i])
 		}
 
+		// Remove each file
 		for _, fi := range toRemove {
-			err = os.Remove(filepath.Join(path, fi.Name()))
-			if err != nil {
-				return pruned, err
+			if err = os.Remove(filepath.Join(path, fi.Name())); err != nil {
+				return
 			}
-			pruned++
+			total++
 		}
 	}
 
-	return pruned, nil
+	return
 }
