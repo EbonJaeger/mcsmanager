@@ -36,7 +36,7 @@ func StopServer(root *cmd.RootCMD, c *cmd.CMD) {
 	// Stop the server gracefully
 	err := tmux.Exec("stop", name)
 
-	// Wait 10 seconds for server to stop
+	// Wait 20 seconds for server to stop
 	done := make(chan bool)
 	go pollSessions(done, name)
 	stopped := <-done
@@ -62,14 +62,14 @@ func pollSessions(done chan bool, name string) {
 			if !tmux.IsServerRunning(name) { // Session no longer running
 				done <- true
 			} else { // Session still running
-				if tickCount == 10 { // Stop polling after 10 seconds
+				if tickCount == 20 { // Stop polling after 20 seconds
 					done <- false
 					ticker.Stop()
 					log.Println("")
 					return
 				}
 
-				log.Printf("\rWaiting up to 10 seconds: %d", tickCount)
+				log.Printf("\rWaiting up to 20 seconds: %d", tickCount)
 			}
 		}
 	}
