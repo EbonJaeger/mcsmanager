@@ -3,11 +3,12 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/EbonJaeger/mcsmanager/config"
+	"github.com/EbonJaeger/mcsmanager/provider"
 	"github.com/EbonJaeger/mcsmanager/tmux"
-	"github.com/EbonJaeger/mcsmanager/util"
 )
 
 // Update downloads a server jar from the given URL.
@@ -21,17 +22,15 @@ var Update = cmd.CMD{
 
 // UpdateArgs contains the command arguments for the update command
 type UpdateArgs struct {
-	Provider string `desc:"The server software we're trying to update"`
-	Version  string `desc:"The Minecraft version to download"`
+	Args []string `desc:"URL to the server jar to download, or a provider and version, e.g. \"paper 1.16.4\""`
 }
 
 // UpdateServer downloads the specified server file.
 func UpdateServer(root *cmd.RootCMD, c *cmd.CMD) {
-	args := c.Args.(*UpdateArgs)
-
-	// Check if the provider is supported
-	if args.Provider != "paper" {
-		log.Fatalln("Only Paper is supported by this command at this time. :(")
+	args := c.Args.(*UpdateArgs).Args
+	if len(args) != 1 || len(args) != 2 {
+		printUsage()
+		return
 	}
 
 	// Get the server name
@@ -44,18 +43,44 @@ func UpdateServer(root *cmd.RootCMD, c *cmd.CMD) {
 	}
 
 	// Get the current working directory
-	log.Infoln("Downloading new server jar...")
 	cwd, err := os.Getwd()
 	if err != nil {
 		return
 	}
 
-	// Download the specified server jar
 	fileName := config.Conf.MainSettings.ServerFile
 	outFile := filepath.Join(cwd, fileName)
-	err = util.UpdatePaper(args.Version, outFile)
-	if err != nil {
-		log.Fatalln("Error downloading file:", err)
+
+	// Figure out our upgrade provider
+	var prov provider.Provider
+	if len(args) == 1 {
+		prov = provider.File{Url: args[0]}
+	} else if len(args) == 2 {
+		providerType := strings.ToUpper(args[0])
+		switch providerType {
+		case provider.PAPER_PROVIDER:
+			prov = provider.Paper{Version: args[1]}
+		default:
+			log.Fatalf("Unknown provider type: %s\n", providerType)
+		}
 	}
-	log.Goodln("Server jar updated!")
+
+	log.Infoln("Downloading new server jar...")
+	if err = prov.Update(outFile); err != nil {
+		log.Fatalln("Error downloading file:", err)
+	} else {
+		log.Goodln("Server jar updated!")
+	}
+}
+
+func printUsage() {
+	log.Errorln("Incorrect number of args!")
+	log.Errorln("")
+	log.Errorln("USAGE:")
+	log.Errorln("\tmcsmanager update <url>")
+	log.Errorln("OR")
+	log.Errorln("\tmcsmanager update <provider> <version>")
+	log.Errorln("")
+	log.Errorln("PROVIDERS:")
+	log.Errorln("\tpaper")
 }
