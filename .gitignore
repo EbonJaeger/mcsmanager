@@ -1,7 +1,7 @@
 .idea/*
 _build/*
 vendor/*
-mcsmanager
+./mcsmanager
 
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
 *.o
