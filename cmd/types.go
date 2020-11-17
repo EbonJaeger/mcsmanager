@@ -10,6 +10,9 @@ type DownloaderArgs struct {
 	Args []string `desc:"URL to the server jar to download, or a provider and version, e.g. \"paper 1.16.4\""`
 }
 
+// IsValid checks if the correct number of args were passed.
+// For downloading, args must contain either just one arg with a URL,
+// or two args with the provider name and version.
 func (a DownloaderArgs) IsValid() bool {
 	return len(a.Args) == 1 || len(a.Args) == 2
 }

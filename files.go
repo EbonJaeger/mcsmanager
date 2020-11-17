@@ -1,7 +1,6 @@
 package mcsmanager
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"sort"
@@ -20,11 +19,8 @@ func RemoveOldFiles(path string, maxAge int, exemptFiles ...string) (total int, 
 	// Max age is in days, convert it to hours
 	maxAge = maxAge * 24
 
-	// Check of the logs dir exists
+	// Check if we can access the path
 	if _, err = os.Stat(path); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			err = nil
-		}
 		return
 	}
 
@@ -42,20 +38,20 @@ func RemoveOldFiles(path string, maxAge int, exemptFiles ...string) (total int, 
 	}
 
 	// Iterate over the files
-	for _, fi := range files {
+	for _, file := range files {
 		// Check for exempt files
 		if exemptFiles != nil {
-			if slice.Contains(exemptFiles, fi.Name()) {
+			if slice.Contains(exemptFiles, file.Name()) {
 				continue
 			}
 		}
 
 		// Calculate time difference
 		cur := time.Now()
-		difference := cur.Sub(fi.ModTime())
+		difference := cur.Sub(file.ModTime())
 		// Remove file if needed
 		if difference.Hours() > float64(maxAge) {
-			if err = os.Remove(filepath.Join(path, fi.Name())); err != nil {
+			if err = os.Remove(filepath.Join(path, file.Name())); err != nil {
 				return
 			}
 			total++
@@ -74,9 +70,6 @@ func RemoveTooManyFiles(path string, maxFiles int, exemptFiles ...string) (total
 
 	// Check of the logs dir exists
 	if _, err = os.Stat(path); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			err = nil
-		}
 		return
 	}
 
@@ -95,8 +88,8 @@ func RemoveTooManyFiles(path string, maxFiles int, exemptFiles ...string) (total
 
 	// Check for exempt files
 	if exemptFiles != nil {
-		for i, a := range files {
-			if slice.Contains(exemptFiles, a.Name()) {
+		for i, file := range files {
+			if slice.Contains(exemptFiles, file.Name()) {
 				// Remove exempt files from list of files that can be deleted
 				files = append(files[:i], files[i+1:]...)
 			}
@@ -105,26 +98,28 @@ func RemoveTooManyFiles(path string, maxFiles int, exemptFiles ...string) (total
 
 	// Check if there are too many files
 	numFiles := len(files)
-	if numFiles >= maxFiles {
-		// Sort files so oldest is first
-		sort.Slice(files, func(i, j int) bool {
-			return files[i].ModTime().Before(files[j].ModTime())
-		})
+	if numFiles < maxFiles {
+		return
+	}
 
-		// Get files to remove
-		toRemove := make([]os.FileInfo, 0)
-		numToRemove := numFiles - maxFiles + 1 // We should be at the limit after pruning
-		for i := 0; i < numToRemove; i++ {
-			toRemove = append(toRemove, files[i])
-		}
+	// Sort files so oldest is first
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].ModTime().Before(files[j].ModTime())
+	})
 
-		// Remove each file
-		for _, fi := range toRemove {
-			if err = os.Remove(filepath.Join(path, fi.Name())); err != nil {
-				return
-			}
-			total++
+	// Get files to remove
+	toRemove := make([]os.FileInfo, 0)
+	numToRemove := numFiles - maxFiles + 1 // We should be at the limit after pruning
+	for i := 0; i < numToRemove; i++ {
+		toRemove = append(toRemove, files[i])
+	}
+
+	// Remove each file
+	for _, file := range toRemove {
+		if err = os.Remove(filepath.Join(path, file.Name())); err != nil {
+			return
 		}
+		total++
 	}
 
 	return
