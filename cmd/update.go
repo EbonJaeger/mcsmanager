@@ -54,11 +54,11 @@ func UpdateServer(root *cmd.RootCMD, c *cmd.CMD) {
 	// Figure out our upgrade provider
 	var prov provider.Provider
 	if len(args) == 1 {
-		prov = provider.File{Url: args[0]}
+		prov = provider.File{URL: args[0]}
 	} else if len(args) == 2 {
 		providerType := strings.ToUpper(args[0])
 		switch providerType {
-		case provider.PAPER_PROVIDER:
+		case provider.PaperProvider:
 			prov = provider.Paper{Version: args[1]}
 		default:
 			log.Fatalf("Unknown provider type: %s\n", providerType)

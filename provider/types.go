@@ -1,17 +1,21 @@
 package provider
 
 const (
-	FILE_PROVIDER  = "FILE"
-	PAPER_PROVIDER = "PAPER"
+	// FileProvider is an update provider that simply downloads a given file.
+	FileProvider = "FILE"
+
+	// PaperProvider is an update provider that downloads the server jar from PaperMC.
+	PaperProvider = "PAPER"
 )
 
+// Provider is an interface for a Minecraft server jar provider, such as PaperMC.
 type Provider interface {
 	Update(string) error
 }
 
 // File is an update provider that downloads a new server version from a given URL.
 type File struct {
-	Url string
+	URL string
 }
 
 // Paper is an update provider that downloads a new Paper server version.
