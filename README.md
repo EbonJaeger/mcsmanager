@@ -16,14 +16,6 @@ If you want to build it for yourself, you will need:
 - Golang
 - make
 
-## Build
-To build the project, all you have to do is run `make`. Easy!
-
-## Installing
-If you're using a pre-compiled binary, simply place it where ever you want to use it, or put it into `/usr/bin`.
-
-If you're building the project, you can use `sudo make install` to put it in `/usr/bin` for you.
-
 ## Usage
 `mcsmanager CMD [args]`, where `CMD` is any one of:
 
@@ -37,6 +29,5 @@ If you're building the project, you can use `sudo make install` to put it in `/u
 
 ## License
 Copyright © 2019-2020 Evan Maddock (EbonJaeger)  
-Makefile.waterlog © Bryan Meyers (DataDrake) under the Apache 2.0 license, Makefile adapted from Bryan Meyers (DataDrake)
 
 `mcsmanager` is available under the terms of the Apache-2.0 license
