@@ -8,7 +8,7 @@ import (
 
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/EbonJaeger/mcsmanager/config"
-	"github.com/EbonJaeger/mcsmanager/util"
+	"github.com/EbonJaeger/mcsmanager/provider"
 )
 
 // Init sets up everything required to start a Minecraft server
@@ -16,24 +16,17 @@ var Init = cmd.CMD{
 	Name:  "init",
 	Alias: "i",
 	Short: "Initialize the setup for a Minecraft server",
-	Args:  &InitArgs{},
+	Args:  &DownloaderArgs{},
 	Run:   InitServer,
-}
-
-// InitArgs contains the command arguments for the init command
-type InitArgs struct {
-	URL string `desc:"Location of a server jar to download"`
 }
 
 // InitServer sets up the Minecraft server directory
 func InitServer(root *cmd.RootCMD, c *cmd.CMD) {
-	// Get the command args
-	args := c.Args.(*InitArgs)
-	// Get the current directory
-	cwd, err := os.Getwd()
-	if err != nil {
+	if !c.Args.(*DownloaderArgs).IsValid() {
+		PrintDownloaderUsage(c)
 		return
 	}
+	args := c.Args.(*DownloaderArgs).Args
 
 	// Check if our dependencies are installed
 	log.Infoln("Checking for installed dependencies...")
@@ -47,14 +40,27 @@ func InitServer(root *cmd.RootCMD, c *cmd.CMD) {
 	}
 	log.Goodln("All dependencies are installed!")
 
-	// Download the specified server jar
-	log.Infoln("Downloading server jar...")
+	// Get the current working directory
+	cwd, err := os.Getwd()
+	if err != nil {
+		return
+	}
+
 	fileName := config.Conf.MainSettings.ServerFile
 	outFile := filepath.Join(cwd, fileName)
-	if err = util.DownloadFile(args.URL, outFile); err != nil {
-		log.Fatalln("Error downloading file:", err)
+
+	// Figure out our upgrade provider
+	prov := provider.MatchProvider(args)
+	if prov == nil {
+		log.Fatalf("Unable to get a download provider")
 	}
-	log.Goodln("Server jar downloaded!")
+
+	log.Infoln("Downloading new server jar...")
+	if err = prov.Update(outFile); err != nil {
+		log.Fatalln("Error downloading file:", err)
+	} else {
+		log.Goodln("Server jar updated!")
+	}
 }
 
 func isCommandAvailable(name string) bool {

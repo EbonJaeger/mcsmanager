@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/EbonJaeger/mcsmanager"
 	"github.com/EbonJaeger/mcsmanager/config"
 	"github.com/EbonJaeger/mcsmanager/tmux"
-	"github.com/EbonJaeger/mcsmanager/util"
 )
 
 // Backup archives the Minecraft server files.
@@ -57,7 +57,7 @@ func ArchiveServer(root *cmd.RootCMD, c *cmd.CMD) {
 	}
 
 	// Check for backups that are too old
-	pruned, err := util.RemoveOldFiles(backupDir, config.Conf.BackupSettings.MaxAge)
+	pruned, err := mcsmanager.RemoveOldFiles(backupDir, config.Conf.BackupSettings.MaxAge)
 	if err != nil {
 		log.Fatalf("Unable to remove old backups: %s\n", err.Error())
 	}
@@ -66,7 +66,7 @@ func ArchiveServer(root *cmd.RootCMD, c *cmd.CMD) {
 	}
 
 	// Check for too many backups
-	pruned, err = util.RemoveTooManyFiles(backupDir, config.Conf.BackupSettings.MaxBackups)
+	pruned, err = mcsmanager.RemoveTooManyFiles(backupDir, config.Conf.BackupSettings.MaxBackups)
 	if err != nil {
 		log.Fatalf("Unable to remove old backups: %s\n", err.Error())
 	}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/EbonJaeger/mcsmanager/util"
 	"github.com/stretchr/stew/slice"
 )
 
@@ -70,5 +69,5 @@ func (p Paper) Update(filepath string) error {
 	}
 
 	url := fmt.Sprintf(paperDownloadURL, p.Version, build)
-	return util.DownloadFile(url, filepath)
+	return DownloadFile(url, filepath)
 }

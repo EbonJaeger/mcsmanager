@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/EbonJaeger/mcsmanager"
 	"github.com/EbonJaeger/mcsmanager/config"
 	"github.com/EbonJaeger/mcsmanager/tmux"
-	"github.com/EbonJaeger/mcsmanager/util"
 )
 
 // Start attempts to start a Minecraft server.
@@ -48,7 +48,7 @@ func StartServer(root *cmd.RootCMD, c *cmd.CMD) {
 
 	// Remove old logs
 	logsDir := "logs"
-	pruned, err := util.RemoveOldFiles(logsDir, config.Conf.MainSettings.MaxAge, "latest.log")
+	pruned, err := mcsmanager.RemoveOldFiles(logsDir, config.Conf.MainSettings.MaxAge, "latest.log")
 	if err != nil {
 		log.Fatalf("Unable to remove old backups: %s\n", err.Error())
 	}
@@ -57,7 +57,7 @@ func StartServer(root *cmd.RootCMD, c *cmd.CMD) {
 	}
 
 	// Remove too many logs
-	pruned, err = util.RemoveTooManyFiles(logsDir, config.Conf.MainSettings.MaxLogs, "latest.log")
+	pruned, err = mcsmanager.RemoveTooManyFiles(logsDir, config.Conf.MainSettings.MaxLogs, "latest.log")
 	if err != nil {
 		log.Fatalf("Unable to remove old backups: %s\n", err.Error())
 	}

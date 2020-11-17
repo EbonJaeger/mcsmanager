@@ -3,7 +3,6 @@ package cmd
 import (
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/EbonJaeger/mcsmanager/config"
@@ -16,22 +15,17 @@ var Update = cmd.CMD{
 	Name:  "update",
 	Alias: "u",
 	Short: "Update the jar file for the Minecraft server",
-	Args:  &UpdateArgs{},
+	Args:  &DownloaderArgs{},
 	Run:   UpdateServer,
-}
-
-// UpdateArgs contains the command arguments for the update command
-type UpdateArgs struct {
-	Args []string `desc:"URL to the server jar to download, or a provider and version, e.g. \"paper 1.16.4\""`
 }
 
 // UpdateServer downloads the specified server file.
 func UpdateServer(root *cmd.RootCMD, c *cmd.CMD) {
-	args := c.Args.(*UpdateArgs).Args
-	if len(args) != 1 || len(args) != 2 {
-		printUsage()
+	if !c.Args.(*DownloaderArgs).IsValid() {
+		PrintDownloaderUsage(c)
 		return
 	}
+	args := c.Args.(*DownloaderArgs).Args
 
 	// Get the server name
 	name := config.Conf.MainSettings.ServerName
@@ -52,17 +46,9 @@ func UpdateServer(root *cmd.RootCMD, c *cmd.CMD) {
 	outFile := filepath.Join(cwd, fileName)
 
 	// Figure out our upgrade provider
-	var prov provider.Provider
-	if len(args) == 1 {
-		prov = provider.File{URL: args[0]}
-	} else if len(args) == 2 {
-		providerType := strings.ToUpper(args[0])
-		switch providerType {
-		case provider.PaperProvider:
-			prov = provider.Paper{Version: args[1]}
-		default:
-			log.Fatalf("Unknown provider type: %s\n", providerType)
-		}
+	prov := provider.MatchProvider(args)
+	if prov == nil {
+		log.Fatalf("Unable to get a download provider")
 	}
 
 	log.Infoln("Downloading new server jar...")
@@ -71,16 +57,4 @@ func UpdateServer(root *cmd.RootCMD, c *cmd.CMD) {
 	} else {
 		log.Goodln("Server jar updated!")
 	}
-}
-
-func printUsage() {
-	log.Errorln("Incorrect number of args!")
-	log.Errorln("")
-	log.Errorln("USAGE:")
-	log.Errorln("\tmcsmanager update <url>")
-	log.Errorln("OR")
-	log.Errorln("\tmcsmanager update <provider> <version>")
-	log.Errorln("")
-	log.Errorln("PROVIDERS:")
-	log.Errorln("\tpaper")
 }
