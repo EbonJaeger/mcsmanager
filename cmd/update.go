@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"os"
 	"path/filepath"
 
 	"github.com/DataDrake/cli-ng/cmd"
@@ -11,7 +10,7 @@ import (
 )
 
 // Update downloads a server jar from the given URL.
-var Update = cmd.CMD{
+var Update = cmd.Sub{
 	Name:  "update",
 	Alias: "u",
 	Short: "Update the jar file for the Minecraft server",
@@ -20,41 +19,44 @@ var Update = cmd.CMD{
 }
 
 // UpdateServer downloads the specified server file.
-func UpdateServer(root *cmd.RootCMD, c *cmd.CMD) {
+func UpdateServer(root *cmd.Root, c *cmd.Sub) {
 	if !c.Args.(*DownloaderArgs).IsValid() {
 		PrintDownloaderUsage(c)
 		return
 	}
 	args := c.Args.(*DownloaderArgs).Args
 
-	// Get the server name
-	name := config.Conf.MainSettings.ServerName
+	prefix, err := root.Flags.(*GlobalFlags).GetPathPrefix()
+	if err != nil {
+		Log.Fatalf("Error getting the working directory: %s\n", err)
+	}
+
+	conf, err := config.Load(prefix)
+	if err != nil {
+		Log.Fatalf("Error loading server config: %s\n", err)
+	}
+
+	name := conf.MainSettings.ServerName
 
 	// Check if the server is running
 	if tmux.IsServerRunning(name) {
-		log.Warnln("The server is currently running! Please close it before updating.")
+		Log.Warnln("The server is currently running! Please close it before updating.")
 		return
 	}
 
-	// Get the current working directory
-	cwd, err := os.Getwd()
-	if err != nil {
-		return
-	}
-
-	fileName := config.Conf.MainSettings.ServerFile
-	outFile := filepath.Join(cwd, fileName)
+	fileName := conf.MainSettings.ServerFile
+	outFile := filepath.Join(prefix, fileName)
 
 	// Figure out our upgrade provider
 	prov := provider.MatchProvider(args)
 	if prov == nil {
-		log.Fatalf("Unable to get a download provider")
+		Log.Fatalf("Unable to get a download provider")
 	}
 
-	log.Infoln("Downloading new server jar...")
-	if err = prov.Update(outFile); err != nil {
-		log.Fatalln("Error downloading file:", err)
+	Log.Infoln("Downloading new server jar...")
+	if err := prov.Update(outFile); err != nil {
+		Log.Fatalln("Error downloading file:", err)
 	} else {
-		log.Goodln("Server jar updated!")
+		Log.Goodln("Server jar updated!")
 	}
 }

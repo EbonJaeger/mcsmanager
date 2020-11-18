@@ -15,7 +15,7 @@ import (
 )
 
 // Backup archives the Minecraft server files.
-var Backup = cmd.CMD{
+var Backup = cmd.Sub{
 	Name:  "backup",
 	Alias: "b",
 	Short: "Backup all server files into a .tar.gz archive",
@@ -27,58 +27,63 @@ var Backup = cmd.CMD{
 type BackupArgs struct{}
 
 // ArchiveServer adds all directories and files of the server into a Gzip'd tar archive.
-func ArchiveServer(root *cmd.RootCMD, c *cmd.CMD) {
-	// Get the server name
-	name := config.Conf.MainSettings.ServerName
+func ArchiveServer(root *cmd.Root, c *cmd.Sub) {
+	prefix, err := root.Flags.(*GlobalFlags).GetPathPrefix()
+	if err != nil {
+		Log.Fatalf("Error getting the working directory: %s\n", err)
+	}
+
+	conf, err := config.Load(prefix)
+	if err != nil {
+		Log.Fatalf("Error loading server config: %s\n", err)
+	}
+
+	name := conf.MainSettings.ServerName
 
 	// Check if the server is currently running
 	if tmux.IsServerRunning(name) {
-		log.Warnln("Please stop the server before trying to archive it!")
+		Log.Warnln("Please stop the server before trying to archive it!")
 		return
 	}
 
-	log.Infoln("Archiving server files...")
+	Log.Infoln("Archiving server files...")
 
 	// Get our backup directory path
-	cwd, err := os.Getwd()
-	if err != nil {
-		log.Fatalf("Error trying to initialize config: %s\n", err.Error())
-	}
-	backupDir := filepath.Join(cwd, "backups")
+	backupDir := filepath.Join(prefix, "backups")
 
 	// Check if the backup directory exists
 	if _, err := os.Stat(backupDir); os.IsNotExist(err) { // Dir does not exist
-		log.Infoln("Backup directory does not exist! Creating it...")
+		Log.Infoln("Backup directory does not exist! Creating it...")
 		err = os.Mkdir(backupDir, 0755)
 		if err != nil {
-			log.Fatalln("Unable to create backups directory:", err.Error())
+			Log.Fatalln("Unable to create backups directory:", err.Error())
 		}
-		log.Goodln("Backup directory created!")
+		Log.Goodln("Backup directory created!")
 	}
 
 	// Check for backups that are too old
-	pruned, err := mcsmanager.RemoveOldFiles(backupDir, config.Conf.BackupSettings.MaxAge)
+	pruned, err := mcsmanager.RemoveOldFiles(backupDir, conf.BackupSettings.MaxAge)
 	if err != nil {
-		log.Fatalf("Unable to remove old backups: %s\n", err.Error())
+		Log.Fatalf("Unable to remove old backups: %s\n", err.Error())
 	}
 	if pruned > 0 {
-		log.Infof("Removed %d archive(s) due to age.\n", pruned)
+		Log.Infof("Removed %d archive(s) due to age.\n", pruned)
 	}
 
 	// Check for too many backups
-	pruned, err = mcsmanager.RemoveTooManyFiles(backupDir, config.Conf.BackupSettings.MaxBackups)
+	pruned, err = mcsmanager.RemoveTooManyFiles(backupDir, conf.BackupSettings.MaxBackups)
 	if err != nil {
-		log.Fatalf("Unable to remove old backups: %s\n", err.Error())
+		Log.Fatalf("Unable to remove old backups: %s\n", err.Error())
 	}
 	if pruned > 0 {
-		log.Infof("Removed %d archive(s) because over backup limit.\n", pruned)
+		Log.Infof("Removed %d archive(s) because over backup limit.\n", pruned)
 	}
 
 	// Create archive file
 	tarFile, err := createArchiveFile(backupDir)
 	defer tarFile.Close()
 	if err != nil {
-		log.Fatalf("Error while adding files to archive: %s\n", err.Error())
+		Log.Fatalf("Error while adding files to archive: %s\n", err.Error())
 	}
 
 	// Create our file writers
@@ -90,12 +95,12 @@ func ArchiveServer(root *cmd.RootCMD, c *cmd.CMD) {
 	src, err := os.Open(".")
 	defer src.Close()
 	if err != nil {
-		log.Fatalf("Error while adding files to archive: %s\n", err.Error())
+		Log.Fatalf("Error while adding files to archive: %s\n", err.Error())
 	}
 
 	// Archive the server directory recursively
 	archiveDir(src, tarFileWriter)
-	log.Goodln("Server file archive created!")
+	Log.Goodln("Server file archive created!")
 }
 
 func createArchiveFile(dir string) (*os.File, error) {
@@ -109,7 +114,7 @@ func createArchiveFile(dir string) (*os.File, error) {
 func archiveDir(dir *os.File, w *tar.Writer) {
 	files, err := dir.Readdir(-1)
 	if err != nil {
-		log.Errorf("Error read files in directory: %s\n", err.Error())
+		Log.Errorf("Error read files in directory: %s\n", err.Error())
 	}
 
 	// Iterate through all files
@@ -123,7 +128,7 @@ func archiveDir(dir *os.File, w *tar.Writer) {
 			nestedDir, err := os.Open(dir.Name() + string(filepath.Separator) + fileInfo.Name())
 			defer nestedDir.Close()
 			if err != nil {
-				log.Errorf("Error opening directory for archiving: %s\n", err.Error())
+				Log.Errorf("Error opening directory for archiving: %s\n", err.Error())
 				continue
 			}
 
@@ -132,7 +137,7 @@ func archiveDir(dir *os.File, w *tar.Writer) {
 			header.Name = dir.Name() + string(filepath.Separator) + fileInfo.Name()
 			err = w.WriteHeader(header)
 			if err != nil {
-				log.Errorf("Error adding directory to archive: %s\n", err.Error())
+				Log.Errorf("Error adding directory to archive: %s\n", err.Error())
 			}
 
 			// Recurse and archive everything else in this directory
@@ -147,7 +152,7 @@ func archiveFile(dir *os.File, fi os.FileInfo, w *tar.Writer) {
 	file, err := os.Open(dir.Name() + string(filepath.Separator) + fi.Name())
 	defer file.Close()
 	if err != nil {
-		log.Errorf("Error writing file to archive: %s\n", err.Error())
+		Log.Errorf("Error writing file to archive: %s\n", err.Error())
 	}
 
 	// Create tar header
@@ -159,11 +164,11 @@ func archiveFile(dir *os.File, fi os.FileInfo, w *tar.Writer) {
 
 	err = w.WriteHeader(header)
 	if err != nil {
-		log.Errorf("Error writing file to archive: %s\n", err.Error())
+		Log.Errorf("Error writing file to archive: %s\n", err.Error())
 	}
 
 	_, err = io.Copy(w, io.Reader(file))
 	if err != nil {
-		log.Errorf("Error writing file to archive: %s\n", err.Error())
+		Log.Errorf("Error writing file to archive: %s\n", err.Error())
 	}
 }

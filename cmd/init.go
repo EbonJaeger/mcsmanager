@@ -1,18 +1,17 @@
 package cmd
 
 import (
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/DataDrake/cli-ng/cmd"
-	"github.com/EbonJaeger/mcsmanager/config"
 	"github.com/EbonJaeger/mcsmanager/provider"
+	"github.com/EbonJaeger/mcsmanager/config"
 )
 
 // Init sets up everything required to start a Minecraft server
-var Init = cmd.CMD{
+var Init = cmd.Sub{
 	Name:  "init",
 	Alias: "i",
 	Short: "Initialize the setup for a Minecraft server",
@@ -21,45 +20,54 @@ var Init = cmd.CMD{
 }
 
 // InitServer sets up the Minecraft server directory
-func InitServer(root *cmd.RootCMD, c *cmd.CMD) {
+func InitServer(root *cmd.Root, c *cmd.Sub) {
 	if !c.Args.(*DownloaderArgs).IsValid() {
 		PrintDownloaderUsage(c)
 		return
 	}
 	args := c.Args.(*DownloaderArgs).Args
+	prefix, err := root.Flags.(*GlobalFlags).GetPathPrefix()
+	if err != nil {
+		Log.Fatalf("Error getting the working directory: %s\n", err)
+	}
 
 	// Check if our dependencies are installed
-	log.Infoln("Checking for installed dependencies...")
+	Log.Infoln("Checking for installed dependencies...")
 	missingDeps := make([]string, 0)
 	if !isCommandAvailable("tmux") {
 		missingDeps = append(missingDeps, "tmux")
 	}
-	// Notify the user
 	if len(missingDeps) > 0 {
-		log.Fatalln("Some dependencies are missing! Please install the following, and try again:", strings.Join(missingDeps, ", "))
+		Log.Fatalln("Some dependencies are missing! Please install the following, and try again:", strings.Join(missingDeps, ", "))
 	}
-	log.Goodln("All dependencies are installed!")
+	Log.Goodln("All dependencies are installed!")
 
-	// Get the current working directory
-	cwd, err := os.Getwd()
-	if err != nil {
-		return
+	// Create the server config
+	Log.Infof("Creating server config at '%s'\n", filepath.Join(prefix, "config.toml"))
+	if err := config.CreateFile(prefix); err != nil {
+		Log.Fatalf("Error creating server config: %s\n", err)
 	}
 
-	fileName := config.Conf.MainSettings.ServerFile
-	outFile := filepath.Join(cwd, fileName)
+	conf := config.Default()
+	if err := conf.Save(prefix); err != nil {
+		Log.Fatalf("Error saving default config: %s\n", err)
+	}
+
+	// Download the server jar
+	fileName := conf.MainSettings.ServerFile
+	outFile := filepath.Join(prefix, fileName)
 
 	// Figure out our upgrade provider
 	prov := provider.MatchProvider(args)
 	if prov == nil {
-		log.Fatalf("Unable to get a download provider")
+		Log.Fatalf("Unable to get a download provider")
 	}
 
-	log.Infoln("Downloading new server jar...")
-	if err = prov.Update(outFile); err != nil {
-		log.Fatalln("Error downloading file:", err)
+	Log.Infoln("Downloading new server jar...")
+	if err := prov.Update(outFile); err != nil {
+		Log.Fatalln("Error downloading file:", err)
 	} else {
-		log.Goodln("Server jar updated!")
+		Log.Goodln("Server jar updated!")
 	}
 }
 

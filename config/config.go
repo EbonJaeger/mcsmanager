@@ -2,103 +2,105 @@ package config
 
 import (
 	"bufio"
-	"log"
+	"bytes"
 	"os"
 	"path/filepath"
 
-	"github.com/BurntSushi/toml"
+	"github.com/pelletier/go-toml"
 )
 
-type config struct {
-	MainSettings   mainSettings   `toml:"main_settings"`
-	JavaSettings   javaSettings   `toml:"java_settings"`
-	ServerSettings serverSettings `toml:"server_settings"`
-	BackupSettings backupSettings `toml:"backup_settings"`
+// CreateFile creates a blank config file in the given path.
+func CreateFile(prefix string) error {
+	path := filepath.Join(prefix, "config.toml")
+
+	if _, err := os.Stat(path); err != nil {
+		// Server path doesn't exist. Create it first
+		if os.IsNotExist(err) {
+			if mkDirErr := os.Mkdir(prefix, 0755); err != nil {
+				// Return if the mkdir failed for any other reason
+				if !os.IsExist(mkDirErr) {
+					return mkDirErr
+				}
+			}
+
+			// Create the config file
+			if _, createErr := os.Create(path); createErr != nil {
+				return createErr
+			}
+		} else {
+			return err
+		}
+	}
+
+	return nil
 }
 
-type mainSettings struct {
-	ServerFile string `toml:"server_file_name"`
-	ServerName string `toml:"server_name"`
-	MaxLogs    int    `toml:"max_log_count"`
-	MaxAge     int    `toml:"max_log_age"`
+// Default returns a new config with default settings.
+func Default() Root {
+	return Root{
+		MainSettings: mainSettings{
+			ServerFile: "minecraft_server.jar",
+			ServerName: "Server 1",
+			MaxLogs:    10,
+			MaxAge:     7,
+		},
+
+		JavaSettings: javaSettings{
+			StartingMemory: "2G",
+			MaxMemory:      "2G",
+			Flags:          &[]string{},
+		},
+
+		ServerSettings: serverSettings{
+			Flags: &[]string{"nogui"},
+		},
+
+		BackupSettings: backupSettings{
+			MaxBackups: 10,
+			MaxAge:     7,
+		},
+	}
 }
 
-type javaSettings struct {
-	StartingMemory string   `toml:"starting_memory"`
-	MaxMemory      string   `toml:"maximum_memory"`
-	Flags          []string `toml:"java_flags"`
-}
+// Load reads a config from a config file in the given path.
+func Load(prefix string) (conf Root, err error) {
+	path := filepath.Join(prefix, "config.toml")
 
-type serverSettings struct {
-	Flags []string `toml:"jar_flags"`
-}
-
-type backupSettings struct {
-	MaxBackups int `toml:"max_number_backups"`
-	MaxAge     int `toml:"days_to_keep"`
-}
-
-// Conf holds all of the configuration settings
-var Conf config
-
-func init() {
-	cwd, err := os.Getwd()
+	file, err := os.Open(path)
 	if err != nil {
-		log.Fatalf("Error trying to initialize config: %s", err.Error())
+		return
+	}
+	defer file.Close()
+
+	decoder := toml.NewDecoder(file)
+	if err = decoder.Decode(&conf); err != nil {
+		return
 	}
 
-	configPath := filepath.Join(cwd, "config.toml")
-	err = createConfigFile(cwd)
-	if err != nil {
-		log.Fatalln("Error while creating config file:", err)
-	}
-
-	Conf = config{}
-	_, err = toml.DecodeFile(configPath, &Conf)
-	if err != nil {
-		log.Fatalf("Error trying to decode config: %s", err.Error())
-	}
+	return
 }
 
-func createConfigFile(cwd string) error {
-	configPath := filepath.Join(cwd, "config.toml")
+// Save writes the given config to the disk at the given path.
+func (c Root) Save(prefix string) error {
+	path := filepath.Join(prefix, "config.toml")
 
-	_, err := os.Stat(configPath)
-	if !os.IsNotExist(err) { // Config file already exists
-		return nil
-	}
-
-	file, err := os.Create(configPath)
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 	if err != nil {
 		return err
 	}
-
 	defer file.Close()
 
 	writer := bufio.NewWriter(file)
-	writer.WriteString(configString)
-	err = writer.Flush()
-	return err
+	encoder := toml.NewEncoder(writer).Order(toml.OrderPreserve)
+
+	if err := encoder.Encode(c); err != nil {
+		return err
+	}
+
+	var buf bytes.Buffer
+	if _, err := writer.Write(buf.Bytes()); err != nil {
+		return err
+	}
+
+	return writer.Flush()
 }
-
-var configString = `
-[main_settings]
-server_file_name = "minecraft_server.jar"
-server_name = "Server 1"
-max_log_count = 10
-max_log_age = 7
-
-[java_settings]
-starting_memory = "2G"
-maximum_memory = "2G"
-java_flags = []
-
-[server_settings]
-jar_flags = [
-    "nogui"
-]
-
-[backup_settings]
-max_number_backups = 10
-days_to_keep = 7
-`

@@ -7,7 +7,7 @@ import (
 )
 
 // Exec sends a command to the Minecraft server
-var Exec = cmd.CMD{
+var Exec = cmd.Sub{
 	Name:  "exec",
 	Alias: "e",
 	Short: "Executes a command in the Minecraft server",
@@ -21,13 +21,22 @@ type ExecArgs struct {
 }
 
 // Execute will run a command on a running Minecraft server
-func Execute(root *cmd.RootCMD, c *cmd.CMD) {
-	// Get the server name
-	name := config.Conf.MainSettings.ServerName
+func Execute(root *cmd.Root, c *cmd.Sub) {
+	prefix, err := root.Flags.(*GlobalFlags).GetPathPrefix()
+	if err != nil {
+		Log.Fatalf("Error getting the working directory: %s\n", err)
+	}
+
+	conf, err := config.Load(prefix)
+	if err != nil {
+		Log.Fatalf("Error loading server config: %s\n", err)
+	}
+
+	name := conf.MainSettings.ServerName // Get the server name
 
 	// Check if the server is running
 	if !tmux.IsServerRunning(name) {
-		log.Warnln("The Minecraft server is not running!")
+		Log.Warnln("The Minecraft server is not running!")
 		return
 	}
 
@@ -35,12 +44,10 @@ func Execute(root *cmd.RootCMD, c *cmd.CMD) {
 	args := c.Args.(*ExecArgs)
 
 	// Send the command to the server
-	err := tmux.Exec(args.Command, name)
-
-	// Show any errors to the user
+	err = tmux.Exec(args.Command, name)
 	if err != nil {
-		log.Fatalf("Error while sending command: %s", err.Error())
+		Log.Fatalf("Error while sending command: %s", err.Error())
 	} else {
-		log.Goodln("Command sent successfully!")
+		Log.Goodln("Command sent successfully!")
 	}
 }

@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/waterlog"
 )
 
 // DownloaderArgs contains the command arguments for commands that download
@@ -18,14 +21,38 @@ func (a DownloaderArgs) IsValid() bool {
 }
 
 // PrintDownloaderUsage prints the proper usage to the user.
-func PrintDownloaderUsage(cmd *cmd.CMD) {
-	log.Errorln("Incorrect number of args!")
-	log.Errorln("")
-	log.Errorln("USAGE:")
-	log.Errorf("\tmcsmanager %s <url>\n", cmd.Name)
-	log.Errorln("OR")
-	log.Errorf("\tmcsmanager %s <provider> <version>\n", cmd.Name)
-	log.Errorln("")
-	log.Errorln("PROVIDERS:")
-	log.Errorln("\tpaper")
+func PrintDownloaderUsage(sub *cmd.Sub) {
+	Log.Errorln("Incorrect number of args!")
+	Log.Errorln("")
+	Log.Errorln("USAGE:")
+	Log.Errorf("\tmcsmanager %s <url>\n", sub.Name)
+	Log.Errorln("OR")
+	Log.Errorf("\tmcsmanager %s <provider> <version>\n", sub.Name)
+	Log.Errorln("")
+	Log.Errorln("PROVIDERS:")
+	Log.Errorln("\tpaper")
 }
+
+// GlobalFlags holds the flags for the root command.
+type GlobalFlags struct {
+	Path string `short:"p" long:"path" arg:"true" desc:"Set the path of the Minecraft server"`
+}
+
+// GetPathPrefix gets the server path from the command line flags. If there isn't one,
+// return the current working directory.
+func (f GlobalFlags) GetPathPrefix() (string, error) {
+	prefix := f.Path
+	if prefix == "" {
+		var err error
+		prefix, err = os.Getwd()
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return prefix, nil
+}
+
+// TODO: Make this not suck
+// Log is our logger via WaterLog.
+var Log *waterlog.WaterLog

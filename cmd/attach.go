@@ -10,7 +10,7 @@ import (
 )
 
 // Attach opens the server console.
-var Attach = cmd.CMD{
+var Attach = cmd.Sub{
 	Name:  "attach",
 	Alias: "a",
 	Short: "Open the server console",
@@ -22,37 +22,46 @@ var Attach = cmd.CMD{
 type AttachArgs struct{}
 
 // AttachToSession attaches to the server console if the server is running.
-func AttachToSession(root *cmd.RootCMD, c *cmd.CMD) {
-	// Get the server name
-	name := config.Conf.MainSettings.ServerName
+func AttachToSession(root *cmd.Root, c *cmd.Sub) {
+	prefix, err := root.Flags.(*GlobalFlags).GetPathPrefix()
+	if err != nil {
+		Log.Fatalf("Error getting the working directory: %s\n", err)
+	}
+
+	conf, err := config.Load(prefix)
+	if err != nil {
+		Log.Fatalf("Error loading server config: %s\n", err)
+	}
+
+	name := conf.MainSettings.ServerName
 
 	// Check for already running server
 	if !tmux.IsServerRunning(name) {
-		log.Warnln("Server is not currently running!")
+		Log.Warnln("Server is not currently running!")
 		return
 	}
 
 	// Inform the user how the console works
-	log.Infoln("Attention!")
-	log.Infoln("To leave the console, press Ctrl+B then 'd'")
-	log.Warnln("Warning! Do not press Ctrl+C to exit! You will force-close your server!")
-	log.Println("")
-	log.Print("     Continue? [y/N] ")
+	Log.Infoln("Attention!")
+	Log.Infoln("To leave the console, press Ctrl+B then 'd'")
+	Log.Warnln("Warning! Do not press Ctrl+C to exit! You will force-close your server!")
+	Log.Println("")
+	Log.Print("     Continue? [y/N] ")
 
 	reader := bufio.NewReader(os.Stdin)
 	char, _, err := reader.ReadRune()
 	if err != nil {
-		log.Fatalln("Error while reading input:", err)
+		Log.Fatalln("Error while reading input:", err)
 	}
 
 	if char == 'y' || char == 'Y' {
-		log.Infoln("Opening server console...")
+		Log.Infoln("Opening server console...")
 		if err := tmux.Attach(name); err != nil {
-			log.Fatalln("Unable to attach to session:", err)
+			Log.Fatalln("Unable to attach to session:", err)
 		}
 
-		log.Goodln("Closed server console!")
+		Log.Goodln("Closed server console!")
 	} else {
-		log.Goodln("Exiting!")
+		Log.Goodln("Exiting!")
 	}
 }

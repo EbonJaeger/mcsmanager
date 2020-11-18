@@ -9,7 +9,7 @@ import (
 )
 
 // Stop attempts to stop a Minecraft server.
-var Stop = cmd.CMD{
+var Stop = cmd.Sub{
 	Name:  "stop",
 	Alias: "st",
 	Short: "Stop the Minecraft server",
@@ -21,20 +21,29 @@ var Stop = cmd.CMD{
 type StopArgs struct{}
 
 // StopServer stops the Minecraft server
-func StopServer(root *cmd.RootCMD, c *cmd.CMD) {
-	// Get the server name
-	name := config.Conf.MainSettings.ServerName
+func StopServer(root *cmd.Root, c *cmd.Sub) {
+	prefix, err := root.Flags.(*GlobalFlags).GetPathPrefix()
+	if err != nil {
+		Log.Fatalf("Error getting the working directory: %s\n", err)
+	}
+
+	conf, err := config.Load(prefix)
+	if err != nil {
+		Log.Fatalf("Error loading server config: %s\n", err)
+	}
+
+	name := conf.MainSettings.ServerName
 
 	// Check if the server is already stopped
 	if !tmux.IsServerRunning(name) {
-		log.Warnln("The Minecraft server is already stopped!")
+		Log.Warnln("The Minecraft server is already stopped!")
 		return
 	}
 
-	log.Infoln("Attempting to stop the server...")
+	Log.Infoln("Attempting to stop the server...")
 
 	// Stop the server gracefully
-	err := tmux.Exec("stop", name)
+	err = tmux.Exec("stop", name)
 
 	// Wait 20 seconds for server to stop
 	done := make(chan bool)
@@ -42,14 +51,14 @@ func StopServer(root *cmd.RootCMD, c *cmd.CMD) {
 	stopped := <-done
 
 	if !stopped || err != nil {
-		log.Errorln("Could not stop the server normally! Attempting to force close...")
+		Log.Errorln("Could not stop the server normally! Attempting to force close...")
 		tmux.KillWindow(name)
-		log.Warnln("Server window force-killed!")
+		Log.Warnln("Server window force-killed!")
 		return
 	}
 
-	log.Println("")
-	log.Goodln("Server stopped successfully!")
+	Log.Println("")
+	Log.Goodln("Server stopped successfully!")
 }
 
 func pollSessions(done chan bool, name string) {
@@ -65,11 +74,11 @@ func pollSessions(done chan bool, name string) {
 				if tickCount == 20 { // Stop polling after 20 seconds
 					done <- false
 					ticker.Stop()
-					log.Println("")
+					Log.Println("")
 					return
 				}
 
-				log.Printf("\rWaiting up to 20 seconds: %d", tickCount)
+				Log.Printf("\rWaiting up to 20 seconds: %d", tickCount)
 			}
 		}
 	}
