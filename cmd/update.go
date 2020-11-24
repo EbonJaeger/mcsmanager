@@ -54,7 +54,7 @@ func UpdateServer(root *cmd.Root, c *cmd.Sub) {
 	}
 
 	Log.Infoln("Downloading new server jar...")
-	if err := prov.Update(outFile); err != nil {
+	if err := prov.Download(outFile); err != nil {
 		Log.Fatalln("Error downloading file:", err)
 	} else {
 		Log.Goodln("Server jar updated!")

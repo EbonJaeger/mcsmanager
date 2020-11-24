@@ -14,7 +14,7 @@ const (
 
 // Provider is an interface for a Minecraft server jar provider, such as PaperMC.
 type Provider interface {
-	Update(string) error
+	Download(string) error
 }
 
 // File is an update provider that downloads a new server version from a given URL.
@@ -29,14 +29,13 @@ type Paper struct {
 
 // PaperVersions is the representation of all Paper versions returned by the API.
 type PaperVersions struct {
-	Versions []string `json:"versions"`
+	VersionGroups []string `json:"version_groups"`
+	Versions      []string `json:"versions"`
 }
 
 // PaperBuilds is the representation of the Paper API response for a version.
 type PaperBuilds struct {
-	Builds struct {
-		Latest string `json:"latest"`
-	}
+	Builds []int `json:"builds"`
 }
 
 // MatchProvider creates and returns a provider for the given command arguments.

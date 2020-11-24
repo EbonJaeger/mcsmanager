@@ -8,17 +8,17 @@ import (
 	"github.com/stretchr/stew/slice"
 )
 
-const paperVersionsURL = "https://papermc.io/api/v1/paper"
-const paperBuildsURL = "https://papermc.io/api/v1/paper/%s"
-const paperDownloadURL = "https://papermc.io/api/v1/paper/%s/%s/download"
+const paperVersionsURL = "https://papermc.io/api/v2/projects/paper"
+const paperBuildsURL = "https://papermc.io/api/v2/projects/paper/versions/%s"
+const paperDownloadURL = "https://papermc.io/api/v2/projects/paper/versions/%s/builds/%d/downloads/%s"
 
 // getLatestBuild queries the Paper API to get the latest build number for the
 // version of Minecraft we were given.
-func (p Paper) getLatestBuild() (string, error) {
+func (p Paper) getLatestBuild() (int, error) {
 	url := fmt.Sprintf(paperBuildsURL, p.Version)
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 	defer resp.Body.Close()
 
@@ -26,10 +26,10 @@ func (p Paper) getLatestBuild() (string, error) {
 	builds := &PaperBuilds{}
 	err = dec.Decode(builds)
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 
-	return builds.Builds.Latest, nil
+	return builds.Builds[len(builds.Builds)-1], nil
 }
 
 // validateVersion queries the Paper API to see if we have a valid version string.
@@ -52,7 +52,7 @@ func (p Paper) validateVersion() (bool, error) {
 
 // Update gets the latest build of Paper from their website
 // for the given Minecraft version.
-func (p Paper) Update(filepath string) error {
+func (p Paper) Download(filepath string) error {
 	// See if we actially have a valid version
 	valid, err := p.validateVersion()
 	if err != nil {
@@ -68,6 +68,8 @@ func (p Paper) Update(filepath string) error {
 		return err
 	}
 
-	url := fmt.Sprintf(paperDownloadURL, p.Version, build)
+	download := fmt.Sprintf("paper-%s-%d.jar", p.Version, build)
+
+	url := fmt.Sprintf(paperDownloadURL, p.Version, build, download)
 	return DownloadFile(url, filepath)
 }
