@@ -11,14 +11,10 @@ import (
 // Stop attempts to stop a Minecraft server.
 var Stop = cmd.Sub{
 	Name:  "stop",
-	Alias: "st",
+	Alias: "t",
 	Short: "Stop the Minecraft server",
-	Args:  &StopArgs{},
 	Run:   StopServer,
 }
-
-// StopArgs contains the command arguments for the stop command.
-type StopArgs struct{}
 
 // StopServer stops the Minecraft server
 func StopServer(root *cmd.Root, c *cmd.Sub) {

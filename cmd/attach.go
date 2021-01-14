@@ -14,12 +14,8 @@ var Attach = cmd.Sub{
 	Name:  "attach",
 	Alias: "a",
 	Short: "Open the server console",
-	Args:  &AttachArgs{},
 	Run:   AttachToSession,
 }
-
-// AttachArgs contains the command arguments for the stop command.
-type AttachArgs struct{}
 
 // AttachToSession attaches to the server console if the server is running.
 func AttachToSession(root *cmd.Root, c *cmd.Sub) {

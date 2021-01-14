@@ -19,12 +19,8 @@ var Backup = cmd.Sub{
 	Name:  "backup",
 	Alias: "b",
 	Short: "Backup all server files into a .tar.gz archive",
-	Args:  &BackupArgs{},
 	Run:   ArchiveServer,
 }
-
-// BackupArgs contains the command arguments for the backup command.
-type BackupArgs struct{}
 
 // ArchiveServer adds all directories and files of the server into a Gzip'd tar archive.
 func ArchiveServer(root *cmd.Root, c *cmd.Sub) {

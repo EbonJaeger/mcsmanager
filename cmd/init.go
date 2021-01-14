@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/DataDrake/cli-ng/cmd"
-	"github.com/EbonJaeger/mcsmanager/provider"
 	"github.com/EbonJaeger/mcsmanager/config"
+	"github.com/EbonJaeger/mcsmanager/provider"
 )
 
 // Init sets up everything required to start a Minecraft server
