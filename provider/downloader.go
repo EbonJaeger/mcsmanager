@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/dustin/go-humanize"
 )
@@ -15,6 +16,7 @@ import (
 // write cycle.
 type WriteCounter struct {
 	Current uint64
+	Start   time.Time
 	Total   uint64
 }
 
@@ -38,9 +40,15 @@ func DownloadFile(url string, filepath string) error {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("status code not ok: %d", resp.StatusCode)
+	}
+
 	// Create our progress reporter and pass it to be used alongside our writer
-	counter := &WriteCounter{}
-	counter.Total = uint64(resp.ContentLength)
+	counter := &WriteCounter{
+		Start: time.Now(),
+		Total: uint64(resp.ContentLength),
+	}
 	_, err = io.Copy(out, io.TeeReader(resp.Body, counter))
 	if err != nil {
 		return err
@@ -73,9 +81,12 @@ func (wc *WriteCounter) Write(p []byte) (int, error) {
 func (wc WriteCounter) PrintProgress() {
 	// Clear the line by using a character return to go back to the start and remove
 	// the remaining characters by filling it with spaces
-	fmt.Printf("\r%s", strings.Repeat(" ", 45))
+	fmt.Printf("\r%s", strings.Repeat(" ", 80))
+
+	// Calculate the current transfer rate
+	rate := uint64(float64(wc.Current) / time.Since(wc.Start).Seconds())
 
 	// Return again and print current status of download
 	// We use the humanize package to print the bytes in a meaningful way (e.g. 10 MB)
-	fmt.Printf("\rDownloading... %s / %s complete", humanize.Bytes(wc.Current), humanize.Bytes(wc.Total))
+	fmt.Printf("\rDownloading... %s / %s complete (%s/s)", humanize.Bytes(wc.Current), humanize.Bytes(wc.Total), humanize.Bytes(rate))
 }
