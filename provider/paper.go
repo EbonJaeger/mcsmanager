@@ -12,10 +12,12 @@ import (
 	"github.com/stretchr/stew/slice"
 )
 
-const paperProjectEndpoint = "https://papermc.io/api/v2/projects/paper"
-const paperVersionsEndpoint = "https://papermc.io/api/v2/projects/paper/versions/%s"
-const paperBuildEndpoint = "https://papermc.io/api/v2/projects/paper/versions/%s/builds/%d"
-const paperDownloadEndpoint = "https://papermc.io/api/v2/projects/paper/versions/%s/builds/%d/downloads/%s"
+const (
+	paperProjectEndpoint  = "https://papermc.io/api/v2/projects/paper"
+	paperVersionsEndpoint = "https://papermc.io/api/v2/projects/paper/versions/%s"
+	paperBuildEndpoint    = "https://papermc.io/api/v2/projects/paper/versions/%s/builds/%d"
+	paperDownloadEndpoint = "https://papermc.io/api/v2/projects/paper/versions/%s/builds/%d/downloads/%s"
+)
 
 // getLatestBuild queries the Paper API to get the latest build number for the
 // version of Minecraft we were given.
@@ -28,7 +30,7 @@ func (p Paper) getLatestBuild() (int, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return 0, fmt.Errorf("failed to get build info: %d", resp.StatusCode)
+		return 0, fmt.Errorf("failed to get builds for version '%s': %d", p.Version, resp.StatusCode)
 	}
 
 	dec := json.NewDecoder(resp.Body)
@@ -50,7 +52,7 @@ func (p Paper) validateVersion() (bool, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return false, fmt.Errorf("failed to get build info: %d", resp.StatusCode)
+		return false, fmt.Errorf("failed to get version list: %d", resp.StatusCode)
 	}
 
 	dec := json.NewDecoder(resp.Body)
@@ -61,26 +63,6 @@ func (p Paper) validateVersion() (bool, error) {
 	}
 
 	return slice.Contains(versions.Versions, p.Version), nil
-}
-
-func verifyDownload(path string, expectedHash string) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	sha256 := sha256.New()
-	if _, err := io.Copy(sha256, file); err != nil {
-		return err
-	}
-
-	hash := hex.EncodeToString(sha256.Sum(nil))
-	if hash != expectedHash {
-		return fmt.Errorf("hash mismatch: got %s, but expected %s", hash, expectedHash)
-	}
-
-	return nil
 }
 
 // Update gets the latest build of Paper from their website
@@ -124,4 +106,25 @@ func (p Paper) Download(filepath string) error {
 	}
 
 	return verifyDownload(filepath, b.Download.Application.Hash)
+}
+
+// verifyDownload makes sure that the downloaded file's hash matches what the API says its hash should be.
+func verifyDownload(path string, expectedHash string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	sha256 := sha256.New()
+	if _, err := io.Copy(sha256, file); err != nil {
+		return err
+	}
+
+	hash := hex.EncodeToString(sha256.Sum(nil))
+	if hash != expectedHash {
+		return fmt.Errorf("hash mismatch: got %s, but expected %s", hash, expectedHash)
+	}
+
+	return nil
 }
