@@ -1,26 +1,35 @@
 package provider
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 
 	"github.com/stretchr/stew/slice"
 )
 
-const paperVersionsURL = "https://papermc.io/api/v2/projects/paper"
-const paperBuildsURL = "https://papermc.io/api/v2/projects/paper/versions/%s"
-const paperDownloadURL = "https://papermc.io/api/v2/projects/paper/versions/%s/builds/%d/downloads/%s"
+const paperProjectEndpoint = "https://papermc.io/api/v2/projects/paper"
+const paperVersionsEndpoint = "https://papermc.io/api/v2/projects/paper/versions/%s"
+const paperBuildEndpoint = "https://papermc.io/api/v2/projects/paper/versions/%s/builds/%d"
+const paperDownloadEndpoint = "https://papermc.io/api/v2/projects/paper/versions/%s/builds/%d/downloads/%s"
 
 // getLatestBuild queries the Paper API to get the latest build number for the
 // version of Minecraft we were given.
 func (p Paper) getLatestBuild() (int, error) {
-	url := fmt.Sprintf(paperBuildsURL, p.Version)
+	url := fmt.Sprintf(paperVersionsEndpoint, p.Version)
 	resp, err := http.Get(url)
 	if err != nil {
 		return 0, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return 0, fmt.Errorf("failed to get build info: %d", resp.StatusCode)
+	}
 
 	dec := json.NewDecoder(resp.Body)
 	builds := &PaperBuilds{}
@@ -34,11 +43,15 @@ func (p Paper) getLatestBuild() (int, error) {
 
 // validateVersion queries the Paper API to see if we have a valid version string.
 func (p Paper) validateVersion() (bool, error) {
-	resp, err := http.Get(paperVersionsURL)
+	resp, err := http.Get(paperProjectEndpoint)
 	if err != nil {
 		return false, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return false, fmt.Errorf("failed to get build info: %d", resp.StatusCode)
+	}
 
 	dec := json.NewDecoder(resp.Body)
 	versions := &PaperVersions{}
@@ -48,6 +61,26 @@ func (p Paper) validateVersion() (bool, error) {
 	}
 
 	return slice.Contains(versions.Versions, p.Version), nil
+}
+
+func verifyDownload(path string, expectedHash string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	sha256 := sha256.New()
+	if _, err := io.Copy(sha256, file); err != nil {
+		return err
+	}
+
+	hash := hex.EncodeToString(sha256.Sum(nil))
+	if hash != expectedHash {
+		return fmt.Errorf("hash mismatch: got %s, but expected %s", hash, expectedHash)
+	}
+
+	return nil
 }
 
 // Update gets the latest build of Paper from their website
@@ -68,8 +101,27 @@ func (p Paper) Download(filepath string) error {
 		return err
 	}
 
-	download := fmt.Sprintf("paper-%s-%d.jar", p.Version, build)
+	url := fmt.Sprintf(paperBuildEndpoint, p.Version, build)
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 
-	url := fmt.Sprintf(paperDownloadURL, p.Version, build, download)
-	return DownloadFile(url, filepath)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("failed to get build info: %d", resp.StatusCode)
+	}
+
+	dec := json.NewDecoder(resp.Body)
+	var b PaperBuild
+	if err = dec.Decode(&b); err != nil {
+		return err
+	}
+
+	url = fmt.Sprintf(paperDownloadEndpoint, p.Version, build, b.Download.Application.Name)
+	if err = DownloadFile(url, filepath); err != nil {
+		return err
+	}
+
+	return verifyDownload(filepath, b.Download.Application.Hash)
 }
