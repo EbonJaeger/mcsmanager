@@ -61,7 +61,7 @@ func (p Paper) validateVersion() (bool, error) {
 	return slice.Contains(versions.Versions, p.Version), nil
 }
 
-// Update gets the latest build of Paper from their website
+// Download gets the latest build of Paper from their website
 // for the given Minecraft version.
 func (p Paper) Download(filepath string) error {
 	// See if we actially have a valid version

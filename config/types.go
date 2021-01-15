@@ -1,5 +1,6 @@
 package config
 
+// Root is the root-level of our server configuration structure.
 type Root struct {
 	MainSettings   mainSettings   `toml:"main_settings"`
 	JavaSettings   javaSettings   `toml:"java_settings"`

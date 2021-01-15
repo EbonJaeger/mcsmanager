@@ -53,6 +53,6 @@ func (f GlobalFlags) GetPathPrefix() (string, error) {
 	return prefix, nil
 }
 
-// TODO: Make this not suck
 // Log is our logger via WaterLog.
+// TODO: Make this not suck
 var Log *waterlog.WaterLog
