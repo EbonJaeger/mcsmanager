@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -89,4 +91,26 @@ func (wc WriteCounter) PrintProgress() {
 	// Return again and print current status of download
 	// We use the humanize package to print the bytes in a meaningful way (e.g. 10 MB)
 	fmt.Printf("\rDownloading... %s / %s complete (%s/s)", humanize.Bytes(wc.Current), humanize.Bytes(wc.Total), humanize.Bytes(rate))
+}
+
+// Verify makes sure that the downloaded file's hash matches what the expected hash is.
+// The hasing function used is `sha256`.
+func Verify(path string, expected string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	sha256 := sha256.New()
+	if _, err := io.Copy(sha256, file); err != nil {
+		return err
+	}
+
+	hash := hex.EncodeToString(sha256.Sum(nil))
+	if hash != expected {
+		return fmt.Errorf("hash mismatch: got %s, but expected %s", hash, expected)
+	}
+
+	return nil
 }

@@ -1,13 +1,9 @@
 package provider
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 
 	"github.com/stretchr/stew/slice"
 )
@@ -105,26 +101,5 @@ func (p Paper) Download(filepath string) error {
 		return err
 	}
 
-	return verifyDownload(filepath, b.Download.Application.Hash)
-}
-
-// verifyDownload makes sure that the downloaded file's hash matches what the API says its hash should be.
-func verifyDownload(path string, expectedHash string) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	sha256 := sha256.New()
-	if _, err := io.Copy(sha256, file); err != nil {
-		return err
-	}
-
-	hash := hex.EncodeToString(sha256.Sum(nil))
-	if hash != expectedHash {
-		return fmt.Errorf("hash mismatch: got %s, but expected %s", hash, expectedHash)
-	}
-
-	return nil
+	return Verify(filepath, b.Download.Application.Hash)
 }
