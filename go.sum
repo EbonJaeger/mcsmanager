@@ -1,5 +1,5 @@
-github.com/DataDrake/cli-ng v1.1.1-0.20210114031627-8f88f2ecc142 h1:KCSfvJKaJio9kQlL5Wno5dZH7pL6OEwxkn9QRTxsym4=
-github.com/DataDrake/cli-ng v1.1.1-0.20210114031627-8f88f2ecc142/go.mod h1:Q8waj7L8BdRhq6DP0ZlFrqtcwkzYHotewVRcfvRuseU=
+github.com/DataDrake/cli-ng/v2 v2.0.1 h1:UB4XkkuY2uzkBkDdj+EFmlDqeQzzwtbZI0bzo1AZluc=
+github.com/DataDrake/cli-ng/v2 v2.0.1/go.mod h1:bU9YaNNWWVq0eIdDsU3TCe9+7Jb398iBBoqee5EiKWQ=
 github.com/DataDrake/waterlog v1.0.5 h1:+c506dboTQh4MoHHwdVtNa9E8K/3qAM/lieke0mH/mE=
 github.com/DataDrake/waterlog v1.0.5/go.mod h1:LUv2H3zT/FSN3SNoK/acxHKEaRjI6d+Sio85BfxNOG8=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
@@ -10,9 +10,6 @@ github.com/dustin/go-humanize v1.0.0 h1:VSnTsYCnlFHaM2/igO1h6X3HA71jcobQuxemgkq4
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
 github.com/golang/lint v0.0.0-20181217174547-8f45f776aaf1 h1:6DVPu65tee05kY0/rciBQ47ue+AnuY8KTayV6VHikIo=
 github.com/golang/lint v0.0.0-20181217174547-8f45f776aaf1/go.mod h1:tluoj9z5200jBnyusfRPU2LqT6J+DAorxEvtC7LHB+E=
-github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
-github.com/mattn/kinako v0.0.0-20170717041458-332c0a7e205a h1:0Q3H0YXzMHiciXtRcM+j0jiCe8WKPQHoRgQiRTnfcLY=
-github.com/mattn/kinako v0.0.0-20170717041458-332c0a7e205a/go.mod h1:CdTTBOYzS5E4mWS1N8NWP6AHI19MP0A2B18n3hLzRMk=
 github.com/pelletier/go-toml v1.8.1 h1:1Nf83orprkJyknT6h7zbuEGUEjcyVlCxSUGTENmNCRM=
 github.com/pelletier/go-toml v1.8.1/go.mod h1:T2/BmBdy8dvIRq1a/8aqjN41wvWlN4lrapLU/GW4pbc=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

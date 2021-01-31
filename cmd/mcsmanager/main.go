@@ -4,7 +4,7 @@ import (
 	log2 "log"
 	"os"
 
-	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/cli-ng/v2/cmd"
 	"github.com/DataDrake/waterlog"
 	"github.com/DataDrake/waterlog/format"
 	"github.com/DataDrake/waterlog/level"

@@ -3,7 +3,7 @@ package cmd
 import (
 	"os"
 
-	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/cli-ng/v2/cmd"
 	"github.com/DataDrake/waterlog"
 )
 

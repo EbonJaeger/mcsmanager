@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/cli-ng/v2/cmd"
 	"github.com/EbonJaeger/mcsmanager"
 	"github.com/EbonJaeger/mcsmanager/config"
 	"github.com/EbonJaeger/mcsmanager/tmux"
