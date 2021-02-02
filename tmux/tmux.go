@@ -28,7 +28,7 @@ func Attach(name string) error {
 	}
 
 	// Replace our program context with tmux
-	if sysErr := syscall.Exec(tmux, args, os.Environ()); sysErr != nil {
+	if err = syscall.Exec(tmux, args, os.Environ()); err != nil {
 		return err
 	}
 	return nil

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.1.1] - 2021-02-01
+
+### Fixed
+
+- Return wrong error when attaching to a tmux session
+
 ## [v1.1.0] - 2021-02-01
 
 ### Added
@@ -25,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release.
 
-[unreleased]: https://github.com/EbonJaeger/dolphin-rs/compare/v1.1.0...master
+[unreleased]: https://github.com/EbonJaeger/dolphin-rs/compare/v1.1.1...master
+[v1.1.1]: https://github.com/EbonJaeger/mcsmanager/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/EbonJaeger/mcsmanager/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/EbonJaeger/mcsmanager/compare/3d043fd...v1.0.0
