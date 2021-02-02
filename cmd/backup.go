@@ -29,6 +29,11 @@ var Backup = cmd.Sub{
 
 // ArchiveServer adds all directories and files of the server into a tar archive with optional compression.
 func ArchiveServer(root *cmd.Root, c *cmd.Sub) {
+	level := c.Flags.(*BackupFlags).Level
+	if level < 0 || level > 1 {
+		Log.Fatalln("Compression level must be between 0 and 1")
+	}
+
 	prefix, err := root.Flags.(*GlobalFlags).GetPathPrefix()
 	if err != nil {
 		Log.Fatalf("Error getting the working directory: %s\n", err)
@@ -80,7 +85,6 @@ func ArchiveServer(root *cmd.Root, c *cmd.Sub) {
 	}
 
 	// Create archive file
-	level := c.Flags.(*BackupFlags).Level
 	tarFile, err := createArchive(backupDir, level)
 	if err != nil {
 		Log.Fatalf("Error while adding files to archive: %s\n", err)
