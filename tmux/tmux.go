@@ -7,8 +7,8 @@ import (
 	"syscall"
 )
 
-// SessionName is the name of our tmux session.
-var SessionName = "MC Server Manager"
+// sessionName is the name of our tmux session.
+const sessionName string = "MC Server Manager"
 
 // Attach attempts to attach to a currently active tmux window.
 func Attach(name string) error {
@@ -39,9 +39,9 @@ func Attach(name string) error {
 func CreateSession(command, name string) ([]byte, error) {
 	var cmd *exec.Cmd
 	if IsSessionRunning() {
-		cmd = exec.Command("tmux", "new-window", "-d", "-t", SessionName, "-n", name, command)
+		cmd = exec.Command("tmux", "new-window", "-d", "-t", sessionName, "-n", name, command)
 	} else {
-		cmd = exec.Command("tmux", "new-session", "-d", "-s", SessionName, "-n", name, command)
+		cmd = exec.Command("tmux", "new-session", "-d", "-s", sessionName, "-n", name, command)
 	}
 
 	return cmd.Output()
@@ -63,7 +63,7 @@ func IsSessionRunning() bool {
 	}
 
 	// Check if our session is listed
-	if strings.Contains(sessions, SessionName) {
+	if strings.Contains(sessions, sessionName) {
 		return true
 	}
 
@@ -96,7 +96,7 @@ func ListSessions() (string, error) {
 
 // ListWindows gets the list of active tmux windows.
 func ListWindows() (string, error) {
-	cmd := exec.Command("tmux", "list-windows", "-t", SessionName)
+	cmd := exec.Command("tmux", "list-windows", "-t", sessionName)
 	out, err := cmd.Output()
 
 	return string(out), err
@@ -110,5 +110,5 @@ func KillWindow(name string) error {
 }
 
 func getWindow(name string) string {
-	return SessionName + ":" + name
+	return sessionName + ":" + name
 }
