@@ -1,17 +1,76 @@
 package mcsmanager
 
 import (
+	"archive/tar"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/stretchr/stew/slice"
 )
 
-// RemoveOldFiles will delete files in the given directory if they were last modified
+// Archive builds a tar archive of the given path.
+//
+// We use the  `filepath.Walk()` function to go through the entire
+// file tree starting from the path that is passed in. This means we
+// don't have to do a bunch of extra recursive logic for nested directories
+// and having different code paths for files and directories.
+func Archive(path string, w *tar.Writer, excludes ...string) error {
+	dir, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer dir.Close()
+
+	// Walk the file tree from the server's root path
+	return filepath.Walk(path, func(child string, info os.FileInfo, err error) error {
+		// Don't try to add the root dir to the archive
+		if path == child {
+			return nil
+		}
+
+		// Don't archive files or directories that should be excluded
+		for _, exclude := range excludes {
+			if strings.Contains(child, exclude) {
+				return nil
+			}
+		}
+
+		// Write file header to archive
+		name := strings.TrimPrefix(child, path+"/")
+		header, err := tar.FileInfoHeader(info, name)
+		if err != nil {
+			return err
+		}
+		header.Name = name
+
+		if err = w.WriteHeader(header); err != nil {
+			return err
+		}
+
+		// Copy the item to the archive
+		if !info.IsDir() {
+			file, err := os.Open(child)
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+
+			if _, err = io.Copy(w, io.Reader(file)); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+// PruneOld will delete files in the given directory if they were last modified
 // after a certain period of time.
-func RemoveOldFiles(path string, maxAge int, exemptFiles ...string) (total int, err error) {
+func PruneOld(path string, maxAge int, exemptFiles ...string) (total int, err error) {
 	if maxAge == -1 { // -1 to disable age pruning
 		return
 	}
@@ -61,9 +120,9 @@ func RemoveOldFiles(path string, maxAge int, exemptFiles ...string) (total int, 
 	return
 }
 
-// RemoveTooManyFiles will remove the oldest files in a directory until
+// Prune will remove the oldest files in a directory until
 // the number of files in the directory is one under the limit.
-func RemoveTooManyFiles(path string, maxFiles int, exemptFiles ...string) (total int, err error) {
+func Prune(path string, maxFiles int, exemptFiles ...string) (total int, err error) {
 	if maxFiles == -1 { // -1 to disable pruning
 		return
 	}

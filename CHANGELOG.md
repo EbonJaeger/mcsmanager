@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Backup command now prints how long it took to archive the server files
+- Compression of backup archives is now optional by specifying a compression level
+
 ## [v1.1.1] - 2021-02-01
 
 ### Fixed

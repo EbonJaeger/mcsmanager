@@ -51,23 +51,23 @@ func StartServer(root *cmd.Root, c *cmd.Sub) {
 		return
 	}
 
-	// Remove old Logs
+	// Prune old Logs
 	LogsDir := filepath.Join(prefix, "logs")
-	pruned, err := mcsmanager.RemoveOldFiles(LogsDir, conf.MainSettings.MaxAge, "latest.log")
-	if err != nil {
-		Log.Fatalf("Unable to remove old backups: %s\n", err.Error())
-	}
-	if pruned > 0 {
-		Log.Infof("Removed %d log(s) due to age.\n", pruned)
+	if pruned, err := mcsmanager.PruneOld(LogsDir, conf.MainSettings.MaxAge, "latest.log"); err == nil {
+		if pruned > 0 {
+			Log.Infof("Removed %d log(s) due to age.\n", pruned)
+		}
+	} else {
+		Log.Fatalf("Unable to remove old backups: %s\n", err)
 	}
 
-	// Remove too many Logs
-	pruned, err = mcsmanager.RemoveTooManyFiles(LogsDir, conf.MainSettings.MaxLogs, "latest.log")
-	if err != nil {
+	// Prune too many Logs
+	if pruned, err := mcsmanager.Prune(LogsDir, conf.MainSettings.MaxLogs, "latest.log"); err == nil {
+		if pruned > 0 {
+			Log.Infof("Removed %d log(s) because over log limit.\n", pruned)
+		}
+	} else {
 		Log.Fatalf("Unable to remove old backups: %s\n", err.Error())
-	}
-	if pruned > 0 {
-		Log.Infof("Removed %d log(s) because over log limit.\n", pruned)
 	}
 
 	// Build the Java command to start the server
