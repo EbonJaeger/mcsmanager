@@ -10,7 +10,7 @@ import (
 // DownloaderArgs contains the command arguments for commands that download
 // a server jar file.
 type DownloaderArgs struct {
-	Args []string `desc:"URL to the server jar to download, or a provider and version, e.g. \"paper 1.16.4\""`
+	Args []string `zero:"true" desc:"URL to the server jar to download, or a provider and version, e.g. \"paper 1.16.4\""`
 }
 
 // IsValid checks if the correct number of args were passed.

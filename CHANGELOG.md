@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backup command now prints the progress of archiving server files
 - Backup command now prints how long it took to archive the server files
 - Compression of backup archives is now optional by specifying a compression level
+- Init command arguments are now optional
+  - This allows the tool to just save the config, and nothing else
 
 ## [v1.1.1] - 2021-02-01
 

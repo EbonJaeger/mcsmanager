@@ -21,11 +21,6 @@ var Init = cmd.Sub{
 
 // InitServer sets up the Minecraft server directory
 func InitServer(root *cmd.Root, c *cmd.Sub) {
-	if !c.Args.(*DownloaderArgs).IsValid() {
-		PrintDownloaderUsage(c)
-		return
-	}
-	args := c.Args.(*DownloaderArgs).Args
 	prefix, err := root.Flags.(*GlobalFlags).GetPathPrefix()
 	if err != nil {
 		Log.Fatalf("Error getting the working directory: %s\n", err)
@@ -52,6 +47,20 @@ func InitServer(root *cmd.Root, c *cmd.Sub) {
 	if err := conf.Save(prefix); err != nil {
 		Log.Fatalf("Error saving default config: %s\n", err)
 	}
+	Log.Goodln("Server config saved")
+
+	// Allow initializing a server without having to download
+	// a binary. This pretty much just saves the config.
+	if len(c.Args.(*DownloaderArgs).Args) == 0 {
+		return
+	}
+
+	if !c.Args.(*DownloaderArgs).IsValid() {
+		PrintDownloaderUsage(c)
+		return
+	}
+
+	args := c.Args.(*DownloaderArgs).Args
 
 	// Download the server jar
 	fileName := conf.MainSettings.ServerFile
@@ -67,7 +76,7 @@ func InitServer(root *cmd.Root, c *cmd.Sub) {
 	if err := prov.Download(outFile); err != nil {
 		Log.Fatalln("Error downloading file:", err)
 	} else {
-		Log.Goodln("Server jar updated!")
+		Log.Goodln("Server jar downloaded!")
 	}
 }
 
