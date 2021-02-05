@@ -19,12 +19,18 @@ import (
 // file tree starting from the path that is passed in. This means we
 // don't have to do a bunch of extra recursive logic for nested directories
 // and having different code paths for files and directories.
-func Archive(path string, w *tar.Writer, total int, excludes ...string) error {
+func Archive(path string, w *tar.Writer, exclusions ...string) error {
 	dir, err := os.Open(path)
 	if err != nil {
 		return err
 	}
 	defer dir.Close()
+
+	// Count the number of files to archive
+	total, err := CountFiles(path, exclusions...)
+	if err != nil {
+		return fmt.Errorf("error counting files: %s", err)
+	}
 
 	current := 0
 
@@ -36,7 +42,7 @@ func Archive(path string, w *tar.Writer, total int, excludes ...string) error {
 		}
 
 		// Don't archive files or directories that should be excluded
-		for _, exclude := range excludes {
+		for _, exclude := range exclusions {
 			if strings.Contains(child, exclude) {
 				return nil
 			}
@@ -77,12 +83,12 @@ func Archive(path string, w *tar.Writer, total int, excludes ...string) error {
 }
 
 // CountFiles walks a directory tree and counts all files present.
-func CountFiles(path string, excludes ...string) (count int, err error) {
+func CountFiles(path string, exclusions ...string) (count int, err error) {
 	err = filepath.Walk(path, func(child string, info os.FileInfo, walkErr error) error {
 		if walkErr != nil {
 			return err
 		}
-		for _, e := range excludes {
+		for _, e := range exclusions {
 			if strings.Contains(child, e) {
 				return nil
 			}

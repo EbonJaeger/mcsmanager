@@ -88,10 +88,6 @@ func ArchiveServer(root *cmd.Root, c *cmd.Sub) {
 	}
 
 	exclusions := append(*conf.BackupSettings.ExcludedPaths, conf.BackupSettings.BackupDir)
-	total, err := mcsmanager.CountFiles(prefix, exclusions...)
-	if err != nil {
-		Log.Fatalf("Couldn't count files to archive: %s\n", err)
-	}
 
 	// Create archive file
 	tarFile, err := createArchive(backupDir, level)
@@ -117,7 +113,7 @@ func ArchiveServer(root *cmd.Root, c *cmd.Sub) {
 
 	// Add all of the server files to the archive
 	start := time.Now()
-	err = mcsmanager.Archive(prefix, w, total, exclusions...)
+	err = mcsmanager.Archive(prefix, w, exclusions...)
 	diff := time.Since(start)
 
 	Log.Println("")
