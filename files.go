@@ -106,11 +106,6 @@ func PruneOld(path string, maxAge int, exemptFiles ...string) (total int, err er
 	// Max age is in days, convert it to hours
 	maxAge = maxAge * 24
 
-	// Check if we can access the path
-	if _, err = os.Stat(path); err != nil {
-		return
-	}
-
 	// Open the directory
 	dir, err := os.Open(path)
 	if err != nil {
@@ -124,17 +119,16 @@ func PruneOld(path string, maxAge int, exemptFiles ...string) (total int, err er
 		return
 	}
 
+	cur := time.Now()
+
 	// Iterate over the files
 	for _, file := range files {
 		// Check for exempt files
-		if exemptFiles != nil {
-			if slice.Contains(exemptFiles, file.Name()) {
-				continue
-			}
+		if slice.Contains(exemptFiles, file.Name()) {
+			continue
 		}
 
 		// Calculate time difference
-		cur := time.Now()
 		difference := cur.Sub(file.ModTime())
 		// Remove file if needed
 		if difference.Hours() > float64(maxAge) {
@@ -152,11 +146,6 @@ func PruneOld(path string, maxAge int, exemptFiles ...string) (total int, err er
 // the number of files in the directory is one under the limit.
 func Prune(path string, maxFiles int, exemptFiles ...string) (total int, err error) {
 	if maxFiles == -1 { // -1 to disable pruning
-		return
-	}
-
-	// Check of the logs dir exists
-	if _, err = os.Stat(path); err != nil {
 		return
 	}
 
@@ -194,9 +183,9 @@ func Prune(path string, maxFiles int, exemptFiles ...string) (total int, err err
 		return files[i].ModTime().Before(files[j].ModTime())
 	})
 
-	// Get files to remove
 	toRemove := make([]os.FileInfo, 0)
-	numToRemove := numFiles - maxFiles + 1 // We should be at the limit after pruning
+	// We should be at the limit after pruning
+	numToRemove := numFiles - maxFiles + 1
 	for i := 0; i < numToRemove; i++ {
 		toRemove = append(toRemove, files[i])
 	}
