@@ -2,6 +2,7 @@ package mcsmanager
 
 import (
 	"archive/tar"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -18,12 +19,14 @@ import (
 // file tree starting from the path that is passed in. This means we
 // don't have to do a bunch of extra recursive logic for nested directories
 // and having different code paths for files and directories.
-func Archive(path string, w *tar.Writer, excludes ...string) error {
+func Archive(path string, w *tar.Writer, total int, excludes ...string) error {
 	dir, err := os.Open(path)
 	if err != nil {
 		return err
 	}
 	defer dir.Close()
+
+	current := 0
 
 	// Walk the file tree from the server's root path
 	return filepath.Walk(path, func(child string, info os.FileInfo, err error) error {
@@ -62,10 +65,35 @@ func Archive(path string, w *tar.Writer, excludes ...string) error {
 			if _, err = io.Copy(w, io.Reader(file)); err != nil {
 				return err
 			}
+
+			// Print our progress
+			current++
+			fmt.Printf("\r%s", strings.Repeat(" ", 80))
+			fmt.Printf("\rArchiving files... %d / %d", current, total)
 		}
 
 		return nil
 	})
+}
+
+// CountFiles walks a directory tree and counts all files present.
+func CountFiles(path string, excludes ...string) (count int, err error) {
+	err = filepath.Walk(path, func(child string, info os.FileInfo, walkErr error) error {
+		if walkErr != nil {
+			return err
+		}
+		for _, e := range excludes {
+			if strings.Contains(child, e) {
+				return nil
+			}
+		}
+		if !info.IsDir() {
+			count++
+		}
+		return nil
+	})
+
+	return
 }
 
 // PruneOld will delete files in the given directory if they were last modified

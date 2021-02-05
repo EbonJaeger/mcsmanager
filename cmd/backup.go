@@ -84,6 +84,11 @@ func ArchiveServer(root *cmd.Root, c *cmd.Sub) {
 		Log.Fatalf("Unable to remove old backups: %s\n", err)
 	}
 
+	total, err := mcsmanager.CountFiles(prefix, "backups")
+	if err != nil {
+		Log.Fatalf("Couldn't count files to archive: %s\n", err)
+	}
+
 	// Create archive file
 	tarFile, err := createArchive(backupDir, level)
 	if err != nil {
@@ -108,9 +113,10 @@ func ArchiveServer(root *cmd.Root, c *cmd.Sub) {
 
 	// Add all of the server files to the archive
 	start := time.Now()
-	err = mcsmanager.Archive(prefix, w, "backups")
+	err = mcsmanager.Archive(prefix, w, total, "backups")
 	diff := time.Since(start)
 
+	Log.Println("")
 	if err != nil {
 		Log.Errorf("Error adding files to archive: %s\n", err)
 	}
