@@ -44,10 +44,8 @@ func ArchiveServer(root *cmd.Root, c *cmd.Sub) {
 		Log.Fatalf("Error loading server config: %s\n", err)
 	}
 
-	name := conf.MainSettings.ServerName
-
 	// Check if the server is currently running
-	if tmux.IsServerRunning(name) {
+	if tmux.IsServerRunning(conf.MainSettings.ServerName) {
 		Log.Warnln("Please stop the server before trying to archive it!")
 		return
 	}
@@ -55,10 +53,15 @@ func ArchiveServer(root *cmd.Root, c *cmd.Sub) {
 	Log.Infoln("Archiving server files...")
 
 	// Get our backup directory path
-	backupDir := filepath.Join(prefix, "backups")
+	var backupDir string
+	if filepath.IsAbs(conf.BackupSettings.BackupDir) {
+		backupDir = conf.BackupSettings.BackupDir
+	} else {
+		backupDir = filepath.Join(prefix, conf.BackupSettings.BackupDir)
+	}
 
 	// Check if the backup directory exists
-	if _, err := os.Stat(backupDir); os.IsNotExist(err) { // Dir does not exist
+	if _, err := os.Stat(backupDir); os.IsNotExist(err) {
 		Log.Infoln("Backup directory does not exist! Creating it...")
 		if err = os.Mkdir(backupDir, 0755); err != nil {
 			Log.Fatalln("Unable to create backups directory: %s\n", err)
@@ -84,7 +87,8 @@ func ArchiveServer(root *cmd.Root, c *cmd.Sub) {
 		Log.Fatalf("Unable to remove old backups: %s\n", err)
 	}
 
-	total, err := mcsmanager.CountFiles(prefix, "backups")
+	exclusions := append(*conf.BackupSettings.ExcludedPaths, conf.BackupSettings.BackupDir)
+	total, err := mcsmanager.CountFiles(prefix, exclusions...)
 	if err != nil {
 		Log.Fatalf("Couldn't count files to archive: %s\n", err)
 	}
@@ -113,14 +117,14 @@ func ArchiveServer(root *cmd.Root, c *cmd.Sub) {
 
 	// Add all of the server files to the archive
 	start := time.Now()
-	err = mcsmanager.Archive(prefix, w, total, "backups")
+	err = mcsmanager.Archive(prefix, w, total, exclusions...)
 	diff := time.Since(start)
 
 	Log.Println("")
 	if err != nil {
 		Log.Errorf("Error adding files to archive: %s\n", err)
 	}
-	Log.Goodf("Server backup archive created in %s\n", diff.String())
+	Log.Goodf("Server backup archive created in %v\n", diff)
 }
 
 func createArchive(dir string, level int) (*os.File, error) {

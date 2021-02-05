@@ -56,8 +56,10 @@ func Default() Root {
 		},
 
 		BackupSettings: backupSettings{
-			MaxBackups: 10,
-			MaxAge:     7,
+			BackupDir:     "backups",
+			ExcludedPaths: &[]string{},
+			MaxBackups:    10,
+			MaxAge:        7,
 		},
 	}
 }

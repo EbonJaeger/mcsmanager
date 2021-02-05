@@ -7,8 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Config option to set backup directory
+  - May be a relative or absolute path
+- Config option to exclude files/paths from being backed up
+  - Backup directory is always excluded
+
 ### Changed
 
+- Backup command now prints the progress of archiving server files
 - Backup command now prints how long it took to archive the server files
 - Compression of backup archives is now optional by specifying a compression level
 

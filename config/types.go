@@ -26,6 +26,8 @@ type serverSettings struct {
 }
 
 type backupSettings struct {
-	MaxBackups int `toml:"max_number_backups"`
-	MaxAge     int `toml:"days_to_keep"`
+	BackupDir     string    `toml:"backup_dir" comment:"Path can be an absolute or relative path"`
+	ExcludedPaths *[]string `toml:"excluded_paths" comment:"Files that have any of these in their path will not be archived. The backup directory is always excluded"`
+	MaxBackups    int       `toml:"max_number_backups"`
+	MaxAge        int       `toml:"days_to_keep"`
 }
