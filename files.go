@@ -9,8 +9,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/stretchr/stew/slice"
 )
 
 // Archive builds a tar archive of the given path.
@@ -104,7 +102,7 @@ func CountFiles(path string, exclusions ...string) (count int, err error) {
 
 // PruneOld will delete files in the given directory if they were last modified
 // after a certain period of time.
-func PruneOld(path string, maxAge int, exemptFiles ...string) (total int, err error) {
+func PruneOld(path string, maxAge int, exemptions ...string) (total int, err error) {
 	if maxAge == -1 { // -1 to disable age pruning
 		return
 	}
@@ -129,8 +127,7 @@ func PruneOld(path string, maxAge int, exemptFiles ...string) (total int, err er
 
 	// Iterate over the files
 	for _, file := range files {
-		// Check for exempt files
-		if slice.Contains(exemptFiles, file.Name()) {
+		if isExempt(file.Name(), exemptions...) {
 			continue
 		}
 
@@ -150,7 +147,7 @@ func PruneOld(path string, maxAge int, exemptFiles ...string) (total int, err er
 
 // Prune will remove the oldest files in a directory until
 // the number of files in the directory is one under the limit.
-func Prune(path string, maxFiles int, exemptFiles ...string) (total int, err error) {
+func Prune(path string, maxFiles int, exemptions ...string) (total int, err error) {
 	if maxFiles == -1 { // -1 to disable pruning
 		return
 	}
@@ -169,12 +166,9 @@ func Prune(path string, maxFiles int, exemptFiles ...string) (total int, err err
 	}
 
 	// Check for exempt files
-	if exemptFiles != nil {
-		for i, file := range files {
-			if slice.Contains(exemptFiles, file.Name()) {
-				// Remove exempt files from list of files that can be deleted
-				files = append(files[:i], files[i+1:]...)
-			}
+	for i, file := range files {
+		if isExempt(file.Name(), exemptions...) {
+			files = append(files[:i], files[i+1:]...)
 		}
 	}
 
@@ -205,4 +199,16 @@ func Prune(path string, maxFiles int, exemptFiles ...string) (total int, err err
 	}
 
 	return
+}
+
+// isExempt checks if a given file is in the list
+// of exempt files, returning `true` or `false`.
+func isExempt(path string, exemptions ...string) bool {
+	for _, exemption := range exemptions {
+		if strings.Contains(path, exemption) {
+			return true
+		}
+	}
+
+	return false
 }
