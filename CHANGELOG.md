@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Config option to exclude files/paths from being backed up
   - Backup directory is always excluded
 
+### Fixed
+
+- Excluded files while pruning not working
+
 ### Changed
 
 - Backup command now prints the progress of archiving server files
