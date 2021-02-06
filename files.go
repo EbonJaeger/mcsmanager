@@ -40,10 +40,8 @@ func Archive(path string, w *tar.Writer, exclusions ...string) error {
 		}
 
 		// Don't archive files or directories that should be excluded
-		for _, exclude := range exclusions {
-			if strings.Contains(child, exclude) {
-				return nil
-			}
+		if isExempt(child, exclusions...) {
+			return nil
 		}
 
 		// Write file header to archive
@@ -86,10 +84,8 @@ func CountFiles(path string, exclusions ...string) (count int, err error) {
 		if walkErr != nil {
 			return err
 		}
-		for _, e := range exclusions {
-			if strings.Contains(child, e) {
-				return nil
-			}
+		if isExempt(child, exclusions...) {
+			return nil
 		}
 		if !info.IsDir() {
 			count++
