@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -18,11 +19,7 @@ import (
 // don't have to do a bunch of extra recursive logic for nested directories
 // and having different code paths for files and directories.
 func Archive(path string, w *tar.Writer, exclusions ...string) error {
-	dir, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer dir.Close()
+	dir := os.DirFS(path)
 
 	// Count the number of files to archive
 	total, err := CountFiles(path, exclusions...)
@@ -33,15 +30,20 @@ func Archive(path string, w *tar.Writer, exclusions ...string) error {
 	current := 0
 
 	// Walk the file tree from the server's root path
-	return filepath.Walk(path, func(child string, info os.FileInfo, err error) error {
+	return fs.WalkDir(dir, ".", func(child string, entry fs.DirEntry, err error) error {
 		// Don't try to add the root dir to the archive
-		if path == child {
+		if child == "." {
 			return nil
 		}
 
 		// Don't archive files or directories that should be excluded
 		if isExempt(child, exclusions...) {
 			return nil
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			return err
 		}
 
 		// Write file header to archive
@@ -57,8 +59,8 @@ func Archive(path string, w *tar.Writer, exclusions ...string) error {
 		}
 
 		// Copy the item to the archive
-		if !info.IsDir() {
-			file, err := os.Open(child)
+		if !entry.IsDir() {
+			file, err := dir.Open(child)
 			if err != nil {
 				return err
 			}
@@ -80,14 +82,14 @@ func Archive(path string, w *tar.Writer, exclusions ...string) error {
 
 // CountFiles walks a directory tree and counts all files present.
 func CountFiles(path string, exclusions ...string) (count int, err error) {
-	err = filepath.Walk(path, func(child string, info os.FileInfo, walkErr error) error {
+	err = fs.WalkDir(os.DirFS(path), ".", func(child string, dir fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return err
 		}
 		if isExempt(child, exclusions...) {
 			return nil
 		}
-		if !info.IsDir() {
+		if !dir.IsDir() {
 			count++
 		}
 		return nil
