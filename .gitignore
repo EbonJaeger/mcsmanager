@@ -27,3 +27,4 @@ mcsmanager
 *.exe
 *.test
 *.prof
+*.out
