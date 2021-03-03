@@ -51,23 +51,26 @@ func StartServer(root *cmd.Root, c *cmd.Sub) {
 		return
 	}
 
-	// Prune old Logs
-	LogsDir := filepath.Join(prefix, "logs")
-	if pruned, err := mcsmanager.PruneOld(LogsDir, conf.MainSettings.MaxAge, "latest.log"); err == nil {
-		if pruned > 0 {
-			Log.Infof("Removed %d log(s) due to age.\n", pruned)
+	// Check of the logs dir exists before pruning logs
+	logsDir := filepath.Join(prefix, "logs")
+	if _, err := os.Stat(logsDir); err == nil {
+		// Prune old Logs
+		if pruned, err := mcsmanager.PruneOld(logsDir, conf.MainSettings.MaxAge, "latest.log"); err == nil {
+			if pruned > 0 {
+				Log.Infof("Removed %d log(s) due to age.\n", pruned)
+			}
+		} else {
+			Log.Fatalf("Unable to remove old logs: %s\n", err)
 		}
-	} else {
-		Log.Fatalf("Unable to remove old backups: %s\n", err)
-	}
 
-	// Prune too many Logs
-	if pruned, err := mcsmanager.Prune(LogsDir, conf.MainSettings.MaxLogs, "latest.log"); err == nil {
-		if pruned > 0 {
-			Log.Infof("Removed %d log(s) because over log limit.\n", pruned)
+		// Prune too many Logs
+		if pruned, err := mcsmanager.Prune(logsDir, conf.MainSettings.MaxLogs, "latest.log"); err == nil {
+			if pruned > 0 {
+				Log.Infof("Removed %d log(s) because over log limit.\n", pruned)
+			}
+		} else {
+			Log.Fatalf("Unable to remove old logs: %s\n", err.Error())
 		}
-	} else {
-		Log.Fatalf("Unable to remove old backups: %s\n", err.Error())
 	}
 
 	// Build the Java command to start the server
@@ -75,12 +78,11 @@ func StartServer(root *cmd.Root, c *cmd.Sub) {
 
 	// Create tmux window
 	// TODO: out doesn't work as expected
-	_, err = tmux.CreateSession(javaCmd, name)
-	if err != nil {
+	if _, err = tmux.CreateSession(javaCmd, name); err != nil {
 		Log.Fatalln("Error creating tmux session!", err)
+	} else {
+		Log.Goodln("Server started!")
 	}
-
-	Log.Goodln("Server started!")
 }
 
 func buildJavaCmd(conf config.Root, prefix string) string {
