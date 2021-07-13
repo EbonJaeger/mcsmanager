@@ -35,6 +35,7 @@ func DownloadFile(url string, filepath string) error {
 	bar := pb.New64(resp.ContentLength)
 	bar.Set(pb.SIBytesPrefix, true)
 	bar.SetWriter(os.Stdout)
+	bar.SetMaxWidth(80)
 	bar.Start()
 
 	reader := bar.NewProxyReader(resp.Body)
