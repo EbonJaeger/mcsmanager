@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pelletier/go-toml"
+	"github.com/BurntSushi/toml"
 )
 
 // CreateFile creates a blank config file in the given path.
@@ -75,7 +75,7 @@ func Load(prefix string) (conf Root, err error) {
 	defer file.Close()
 
 	decoder := toml.NewDecoder(file)
-	if err = decoder.Decode(&conf); err != nil {
+	if _, err = decoder.Decode(&conf); err != nil {
 		return
 	}
 
@@ -93,7 +93,7 @@ func (c Root) Save(prefix string) error {
 	defer file.Close()
 
 	writer := bufio.NewWriter(file)
-	encoder := toml.NewEncoder(writer).Order(toml.OrderPreserve)
+	encoder := toml.NewEncoder(writer)
 
 	if err := encoder.Encode(c); err != nil {
 		return err
