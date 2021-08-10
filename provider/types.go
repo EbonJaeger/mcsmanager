@@ -22,38 +22,6 @@ type File struct {
 	URL string
 }
 
-// Paper is an update provider that downloads a new Paper server version.
-type Paper struct {
-	Version string
-}
-
-// PaperVersions is the representation of all Paper versions returned by the API.
-type PaperVersions struct {
-	VersionGroups []string `json:"version_groups"`
-	Versions      []string `json:"versions"`
-}
-
-// PaperBuilds is the representation of the Paper API response for a version.
-type PaperBuilds struct {
-	Builds []int `json:"builds"`
-}
-
-// PaperBuild holds the API response data for a particular Paper build.
-type PaperBuild struct {
-	Download PaperDownload `json:"downloads"`
-}
-
-// PaperDownload contains information about a build's file.
-type PaperDownload struct {
-	Application PaperApplication `json:"application"`
-}
-
-// PaperApplication holds the name and hash of a file for a Paper build.
-type PaperApplication struct {
-	Name string `json:"name"`
-	Hash string `json:"sha256"`
-}
-
 // MatchProvider creates and returns a provider for the given command arguments.
 func MatchProvider(args []string) (prov Provider) {
 	if len(args) == 1 {
