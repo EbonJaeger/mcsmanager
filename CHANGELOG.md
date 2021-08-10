@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add a progress bar when archiving files
 
+### Changed
+
+- Try to check if the server is already up to date when updating a Paper server
+
 ## [v1.2.0] - 2021-07-11
 
 ### Added
