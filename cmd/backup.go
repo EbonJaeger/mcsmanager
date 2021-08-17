@@ -14,6 +14,7 @@ import (
 	"github.com/EbonJaeger/mcsmanager/tmux"
 )
 
+// BackupFlags holds the flags for the backup command.
 type BackupFlags struct {
 	Level int `short:"l" long:"level" desc:"Set the compression format to use; 0: no compression; 1: gzip"`
 }

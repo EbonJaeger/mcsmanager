@@ -32,6 +32,7 @@ func main() {
 	cmd.Register(&commands.Attach)
 	cmd.Register(&commands.Backup)
 	cmd.Register(&commands.Update)
+	cmd.Register(&commands.Status)
 
 	root.Run()
 }
