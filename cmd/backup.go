@@ -117,7 +117,6 @@ func ArchiveServer(root *cmd.Root, c *cmd.Sub) {
 	err = mcsmanager.Archive(prefix, w, exclusions...)
 	diff := time.Since(start)
 
-	Log.Println("")
 	if err != nil {
 		Log.Errorf("Error adding files to archive: %s\n", err)
 	}

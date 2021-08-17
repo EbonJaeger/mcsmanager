@@ -10,11 +10,13 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/cheggaaa/pb/v3"
 )
 
 // Archive builds a tar archive of the given path.
 //
-// We use the  `filepath.Walk()` function to go through the entire
+// We use the `filepath.Walk()` function to go through the entire
 // file tree starting from the path that is passed in. This means we
 // don't have to do a bunch of extra recursive logic for nested directories
 // and having different code paths for files and directories.
@@ -22,15 +24,20 @@ func Archive(path string, w *tar.Writer, exclusions ...string) error {
 	dir := os.DirFS(path)
 
 	// Count the number of files to archive
-	total, err := CountFiles(path, exclusions...)
+	count, err := CountFiles(path, exclusions...)
 	if err != nil {
 		return fmt.Errorf("error counting files: %s", err)
 	}
 
-	current := 0
+	bar := pb.New(count)
+	bar.SetTemplate(pb.Simple)
+	bar.Set(pb.CleanOnFinish, true)
+	bar.SetWriter(os.Stdout)
+	bar.SetMaxWidth(80)
+	bar.Start()
 
 	// Walk the file tree from the server's root path
-	return fs.WalkDir(dir, ".", func(child string, entry fs.DirEntry, err error) error {
+	err = fs.WalkDir(dir, ".", func(child string, entry fs.DirEntry, err error) error {
 		// Don't try to add the root dir to the archive
 		if child == "." {
 			return nil
@@ -66,18 +73,19 @@ func Archive(path string, w *tar.Writer, exclusions ...string) error {
 			}
 			defer file.Close()
 
-			if _, err = io.Copy(w, io.Reader(file)); err != nil {
+			if _, err = io.Copy(w, file); err != nil {
 				return err
 			}
 
 			// Print our progress
-			current++
-			fmt.Printf("\r%s", strings.Repeat(" ", 80))
-			fmt.Printf("\rArchiving files... %d / %d", current, total)
+			bar.Increment()
 		}
 
 		return nil
 	})
+
+	bar.Finish()
+	return err
 }
 
 // CountFiles walks a directory tree and counts all files present.

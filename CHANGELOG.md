@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add a progress bar when archiving files
+
+### Changed
+
+- Try to check if the server is already up to date when updating a Paper server
+
+## [v1.2.0] - 2021-07-11
+
+### Added
+
 - Config option to set backup directory
   - May be a relative or absolute path
 - Config option to exclude files/paths from being backed up
@@ -26,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Compression of backup archives is now optional by specifying a compression level
 - Init command arguments are now optional
   - This allows the tool to just save the config, and nothing else
+- Use a progress bar to show the download progress
 
 ## [v1.1.1] - 2021-02-01
 
@@ -51,7 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release.
 
-[unreleased]: https://github.com/EbonJaeger/dolphin-rs/compare/v1.1.1...master
+[unreleased]: https://github.com/EbonJaeger/mcsmanager/compare/v1.2.0...master
+[v1.2.0]: https://github.com/EbonJaeger/mcsmanager/compare/v1.1.1...v1.2.0
 [v1.1.1]: https://github.com/EbonJaeger/mcsmanager/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/EbonJaeger/mcsmanager/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/EbonJaeger/mcsmanager/compare/3d043fd...v1.0.0
